@@ -56,7 +56,7 @@ yarn-error.log
 *.jsbundle
 
 # hide env file 
-.env
+/.env
 
 # Ruby / CocoaPods
 **/Pods/
