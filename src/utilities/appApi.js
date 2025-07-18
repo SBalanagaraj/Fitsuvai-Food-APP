@@ -1,0 +1,89 @@
+import {
+  BASE_URL,
+  CONTROLLER,
+  BLOG_OVERVIEW,
+  DASHBOARD,
+  PRODUCTOVERVIEW,
+  PRODUCTDETAILS,
+  GENDRAL_COURSE,
+  COURSE,
+  ABOUTUS,
+  CONTACTUS,
+  EDIT_PROFILE,
+  REQUEST_FOOD,
+  USERSETTINGS,
+  CHECKOUT,
+  WISHLIST,
+  PROMOCODE,
+  MYORDER,
+  CANCELORDER,
+  REWARDS,
+  ADDRESS,
+  LOGIN,
+  LOGOUT,
+  DELETEACCOUNT,
+  AUTHONTICATION,
+  CHATBOT,
+  ASSESMENTS,
+  PRODUCTREVIEW,
+  SUBSCRIPTIONS,
+  NOTIFICATION,
+  ADMIN,
+  // DefaultValues
+  APIKEY,
+  // SVG PATH
+  SVG_PATH,
+  SUBSCRIPTION_SVG,
+  QUALITY_SVG,
+  REPUTATION_SVG,
+  STEP_4_1HOV,
+  STEP_4_1,
+} from '@env';
+
+const baseUrl = BASE_URL;
+
+const baseURL = BASE_URL + CONTROLLER;
+
+console.log(CANCELORDER, 'url--');
+
+export const url = () => ({
+  //   url
+  login: baseURL + LOGIN,
+  logout: baseURL + LOGOUT,
+  deleteAccount: baseURL + DELETEACCOUNT,
+  home: baseURL + DASHBOARD,
+  blog_overview: baseURL + BLOG_OVERVIEW,
+  productOverview: baseURL + PRODUCTOVERVIEW,
+  gendral_course: baseURL + GENDRAL_COURSE,
+  course: baseURL + COURSE,
+  about: baseURL + ABOUTUS,
+  contact: baseURL + CONTACTUS,
+  edit_profile: baseURL + EDIT_PROFILE,
+  productDetail: baseURL + PRODUCTDETAILS,
+  request_food: baseURL + REQUEST_FOOD,
+  userSettings: baseURL + USERSETTINGS,
+  checkout: baseURL + CHECKOUT,
+  wishList: baseURL + WISHLIST,
+  promoCode: baseURL + PROMOCODE,
+  myOrder: baseURL + MYORDER,
+  cancelOrder: baseURL + CANCELORDER,
+  rewards: baseURL + REWARDS,
+  addressBook: baseURL + ADDRESS,
+  authontication: baseURL + AUTHONTICATION,
+  chatBot: baseURL + CHATBOT,
+  assesment: baseURL + ASSESMENTS,
+  reviewApi: baseURL + PRODUCTREVIEW,
+  subscriptions: baseURL + SUBSCRIPTIONS,
+  notification: baseURL + NOTIFICATION,
+  admin: baseUrl + ADMIN,
+
+  // DefaultValues
+  apiKey: APIKEY,
+  //   images
+  //   svg
+  subscriptionMenuIcon: baseUrl + SUBSCRIPTION_SVG,
+  qualitySVG: baseUrl + SVG_PATH + QUALITY_SVG,
+  reputation: baseUrl + SVG_PATH + REPUTATION_SVG,
+  step_4_1: baseUrl + SVG_PATH + STEP_4_1,
+  step_4_1hov: baseUrl + SVG_PATH + STEP_4_1HOV,
+});
