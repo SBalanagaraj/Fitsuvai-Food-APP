@@ -23,6 +23,7 @@ export default function HtmlView({
   padding = 0,
   width,
   whiteText = false,
+  ElementStyle = {},
 }) {
   const appColor = appColors();
 
@@ -60,25 +61,43 @@ export default function HtmlView({
     //   tagName: 'video',
     //   contentModel: HTMLContentModel.block,
     //   isVoid: false,
-    // }),
+    // }),,
   };
 
   const renderers = {
     iframe: IframeRenderer,
     table: TableRenderer,
   };
-
   const htmlContent = `<html>
                           <head>
                             <style>
                               @font-face {
                                 font-family: 'MyCustomFont';
-                                src: url('https://app.smart-golf.eu/assets/fonts/Roboto-medium.ttf') format('truetype');
+                                src: url('https://app.smart-golf.eu/assets/fonts/Roboto-regular.ttf') format('truetype');
                               }
                               body {
                                 font-family: 'MyCustomFont', sans-serif;
-                                color:red;
-                                font-size:50px;
+                                font-size:17px;
+                                 padding-top: 0px;
+                                  padding-right: 15px;
+                                  padding-bottom: 0px;
+                                  padding-left: 15px;
+                                  text-align: left;
+                                  margin:0
+                              }
+                                    table {
+                                width: 100%;
+                                border-collapse: collapse;
+                                margin-top: 10px;
+                              }
+                              th, td {
+                                border: 1px solid #000;
+                                text-align: center;
+                                color:#000;
+                              }
+                              th {
+                                background-color: #fff;
+                                font-weight: bold;
                               }
                             </style>
                           </head>
@@ -92,7 +111,7 @@ export default function HtmlView({
       <RenderHTML
         renderers={renderers}
         // defaultTextProps={{selectable: true}}
-        source={{html: `${url}`, uri: uri}}
+        source={{html: `${htmlContent}`, uri: uri}}
         contentWidth={scrnWidth}
         tagsStyles={{
           body: {
@@ -101,11 +120,21 @@ export default function HtmlView({
             font: appFont.rM,
             // lineHeight: fontScalling(2.2),
             width: width ? width : scrnWidth - padding,
+            padding: 0,
+            margin: 0,
           },
           p: {
             color: whiteText ? appColor.white : appColor.textBlack,
             width: '100%',
             alignSelf: 'center',
+            fontSize: fontScalling(1.8),
+          },
+
+          h6: {
+            color: whiteText ? appColor.white : appColor.textBlack,
+            width: '100%',
+            alignSelf: 'center',
+            fontSize: fontScalling(1.8),
           },
           iframe: {
             alignSelf: 'center',
@@ -120,6 +149,7 @@ export default function HtmlView({
             alignSelf: 'center',
             width: '100%',
           },
+          ...ElementStyle,
         }}
         renderersProps={{
           iframe: {

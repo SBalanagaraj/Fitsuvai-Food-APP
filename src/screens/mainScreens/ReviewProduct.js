@@ -28,10 +28,9 @@ import FilterButton from '../../components/Buttons/FilterButton';
 import PrimaryButton from '../../components/Buttons/PrimaryButton';
 import {Icon} from '../../utilities/icon';
 import {launchImageLibrary} from 'react-native-image-picker';
-import Video from 'react-native-video';
 import ModalBottomSheet from '../../components/BottomSheet/ModalBottomSheet';
 import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
-import ImageCropPicker, {openCamera} from 'react-native-image-crop-picker';
+import ImageCropPicker from 'react-native-image-crop-picker';
 import {url} from '../../utilities/appApi';
 import {useShowToast} from '../../components/Toast/ToastAlert';
 import {useSelector} from 'react-redux';
@@ -60,7 +59,7 @@ export default function ReviewProduct({navigation, route}) {
     });
   };
 
-  const {userSettings, vegToggle} = useSelector(state => state.setting);
+  const {userSettings} = useSelector(state => state.setting);
 
   const [videoUrl, setVideoUrl] = useState('');
   // for video play
@@ -284,15 +283,17 @@ export default function ReviewProduct({navigation, route}) {
             });
           }
         }
-        print(formdata, 'formdata');
         var requestOptions = {
           method: 'POST',
           body: formdata,
         };
+        print(formdata, 'formdata');
         // get the response:
         const response = await fetch(url().reviewApi, requestOptions);
+        print(response, 'response in home screen');
         if (response.status == 200) {
           const resparse = await response.json();
+          print(resparse, 'resparse');
           if (resparse.status == 'success') {
             showToast('success', '', resparse.message, 2000);
             navigation.navigate('ReviewPage');

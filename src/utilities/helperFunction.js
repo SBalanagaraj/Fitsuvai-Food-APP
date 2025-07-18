@@ -1,13 +1,19 @@
-import moment from 'moment';
 import {
-  Alert,
   Dimensions,
+  StatusBar,
+  View,
+  SafeAreaView,
+  Alert,
   Linking,
-  PermissionsAndroid,
-  Platform,
 } from 'react-native';
 import {PERMISSIONS, request} from 'react-native-permissions';
 import {responsiveFontSize} from 'react-native-responsive-dimensions';
+import moment from 'moment';
+import {setFcmToken, userSettingApi} from '../redux/SettingSlice';
+import messaging from '@react-native-firebase/messaging';
+import appColors from './appColors';
+
+//Android FIles
 
 const {width} = Dimensions.get('screen');
 
@@ -36,7 +42,7 @@ export const Capitalize = str => {
 export const fontScalling = size => {
   if (size > 0) {
     return width > 500
-      ? responsiveFontSize(size - 0.5)
+      ? responsiveFontSize(size - 0.8)
       : responsiveFontSize(size);
   }
 };
@@ -157,11 +163,13 @@ export const destructureDate = (dt, type) => {
 };
 
 export function convertTo24HourFormat(timeString) {
-  const [time, period] = timeString.split(' ');
+  // const [time, period] = timeString.trim().split(' ');
+  const time = timeString.slice(0, 8).trim();
+  const period = timeString.slice(8).trim();
   const [hour, minute, sec] = time.split(':');
   let formattedHour = parseInt(hour);
 
-  if (period === 'pm') {
+  if (period.toLowerCase() === 'pm' && formattedHour != '12') {
     formattedHour += 12;
   }
 
@@ -252,6 +260,8 @@ export const requestPermissions = async (type, fn = () => {}) => {
       ? PERMISSIONS.ANDROID.CAMERA
       : null;
   const req = await request(types);
+  print(types, 'types');
+  print(req, 'req');
   const status =
     type == 'storage' && req == 'unavailable'
       ? await request(PERMISSIONS.ANDROID.WRITE_EXTERNAL_STORAGE)
@@ -275,30 +285,130 @@ export const requestPermissions = async (type, fn = () => {}) => {
   return status;
 };
 
-// export const requestPermissions = async (type, fn = () => {}) => {
-//   let types =
-//     type == 'storage'
-//       ? PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE
-//       : type == 'camera'
-//       ? PERMISSIONS.ANDROID.CAMERA
-//       : null;
-//   const status = await request(types);
+export const checkNotificationPermission = (
+  dispatch,
+  setTriggerFcmToken = () => {},
+) => {
+  const checkPermission = async () => {
+    await messaging()
+      .hasPermission()
+      .then(enabled => {
+        if (enabled != -1) {
+          registerRemoteMessage();
+        } else {
+          requestUserPermission();
+        }
+      })
+      .catch(error => {
+        console.log('error checking permisions ' + error);
+      });
+  };
 
-//   if (status == 'granted') {
-//     fn();
-//   } else if (status == 'blocked') {
-//     Alert.alert(
-//       'Permission Required',
-//       'storage permission is required. Please enable it in the app settings.',
-//       [
-//         {text: 'Cancel', style: 'cancel'},
-//         {
-//           text: 'Open Settings',
-//           onPress: () => Linking.openSettings(),
-//         },
-//       ],
-//     );
-//   } else {
-//     return false;
-//   }
-// };
+  async function requestUserPermission() {
+    const authStatus = await messaging().requestPermission();
+    const enabled =
+      authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+      authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+    if (enabled) {
+      registerRemoteMessage();
+    } else {
+      console.log('auth failed');
+    }
+  }
+
+  const registerRemoteMessage = async () => {
+    try {
+      const registered = messaging().isDeviceRegisteredForRemoteMessages;
+
+      if (registered) {
+        getFCMToken();
+      } else {
+        await messaging()
+          .registerDeviceForRemoteMessages()
+          .then(value => {
+            if (value) {
+              getFCMToken();
+            }
+          });
+      }
+    } catch (error) {
+      console.log('Error getting FCM token:', error);
+    }
+  };
+
+  const getFCMToken = async () => {
+    try {
+      await messaging()
+        .getToken()
+        .then(token => {
+          dispatch(setFcmToken(token));
+          dispatch(userSettingApi());
+        })
+        .catch(error => {
+          console.log(error, 'error');
+          // setTriggerFcmToken(pre => pre + 1);
+        });
+    } catch (error) {
+      console.log('Error getting FCM token:', error);
+    }
+  };
+
+  checkPermission();
+};
+
+export function bmiBasedValues(bmi) {
+  let bmiCategory = '';
+  let bmiColor = '';
+  if (bmi < 18.5) {
+    bmiCategory = 'Under weight';
+    bmiColor = '#43bbd9';
+  } else if (bmi >= 18.5 && bmi <= 24.9) {
+    bmiCategory = 'healthy Weight';
+    bmiColor = '#06a23a';
+  } else if (bmi >= 25 && bmi <= 29.9) {
+    bmiCategory = 'Over weight';
+    bmiColor = '#f4a045';
+  } else {
+    bmiCategory = 'Obese Weight';
+    bmiColor = '#e51313';
+  }
+  return {bmiCategory, bmiColor};
+}
+
+// Convert time format from "10:00:00" to "10:00: Am"
+export function convert12HrTimeFormat(inputTime) {
+  // Split the input time string by space to separate time and "uur"
+  const [time] = inputTime.split(' ');
+
+  // Split the time string by colon to extract hours and minutes
+  const [hours, minutes, sec] = time.split(':');
+  let section = '';
+
+  // Format the hours and minutes
+  const formattedHours = parseInt(hours, 10).toString().padStart(2, '0');
+  if (formattedHours > 12) {
+    section = 'PM';
+  } else {
+    section = 'AM';
+  }
+  const convertHour =
+    formattedHours > 12 ? formattedHours - 12 : formattedHours;
+  const formattedMinutes = parseInt(minutes, 10).toString().padStart(2, '0');
+
+  // Concatenate the formatted hours and minutes
+  const formattedTime = `${convertHour}:${formattedMinutes}:${section}`;
+  // print(formattedTime, 'formattedTime');
+  return formattedTime;
+}
+export const percentAmt = (total, percent) => {
+  return (total * percent) / 100;
+};
+
+export const percentage = (total, amount) => {
+  return (100 * amount) / total;
+};
+
+export const isFloat = num => {
+  return !Number.isInteger(num);
+};
+

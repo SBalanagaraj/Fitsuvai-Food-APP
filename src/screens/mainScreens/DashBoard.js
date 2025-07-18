@@ -7,11 +7,8 @@ import {
   Pressable,
   ScrollView,
   TextInput,
-  PermissionsAndroid,
-  ImageBackground,
   RefreshControl,
   TouchableOpacity,
-  Image,
 } from 'react-native';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
@@ -44,10 +41,17 @@ import Carousel from 'react-native-reanimated-carousel';
 import {
   setAssesmentRoute,
   setBottomTabPress,
+  setVegToggle,
   userSettingApi,
 } from '../../redux/SettingSlice';
 import {setSummeryContent} from '../../redux/SummerySlice';
-import {duration} from 'moment';
+import LottieView from 'lottie-react-native';
+import Toggle from '../../components/Buttons/Toggle';
+import FastImage from 'react-native-fast-image';
+import BottomCard from '../../components/Card/BottomCard';
+import useVoiceRecognition from '../../utilities/useVoiceRecognition';
+import VoiceRecordCard from '../../components/Card/VoiceRecordCard';
+import RecordModal from '../../components/Card/RecordModal';
 
 const baseOptions = {
   vertical: false,
@@ -61,40 +65,58 @@ const AssessmentCorousel = ({homeData}) => {
   const navigation = useNavigation();
   const [assesMentIndex, setAssIndex] = useState(0);
   const [assInd, setAssInd] = useState(0);
-
   const dispatch = useDispatch();
 
+  
+
   return (
-    <ImageBackground
-      resizeMode="cover"
-      source={require('../../../assets/images/assesment_bg.png')}
-      style={styles.assesMentContainer}>
+    <View
+      style={[
+        styles.assesMentContainer, //$
+        {
+          backgroundColor: appColor.gold,
+          borderWidth: 1,
+          borderColor: appColor.sliderGreyBg,
+          elevation: 0.7,
+        },
+      ]}>
+      <FastImage
+        resizeMode="cover"
+        source={require('../../../assets/images/assesment_bg.png')}
+        style={{...StyleSheet.absoluteFillObject}}
+      />
       <View style={styles.assInnerCon}>
         <Text
           style={{
             color: appColor.white,
             fontFamily: appFont.bB,
-            fontSize: fontScalling(3),
+            fontSize: fontScalling(2.7),
             paddingTop: 5,
-            paddingBottom: 5,
+            // paddingBottom: 5,
             textAlign: 'center',
           }}>
           Top Deals Provided from
         </Text>
-        <Text
-          style={{
-            color: appColor.bgBlack,
-            fontFamily: appFont.bB,
-            fontSize: fontScalling(3),
-            paddingBottom: 10,
-            textAlign: 'center',
-          }}>
-          Fitsuvai company
-        </Text>
         <View
           style={{
-            marginTop: 10,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingBottom: 8,
           }}>
+          <Text
+            style={{
+              color: appColor.bgBlack,
+              fontFamily: appFont.bB,
+              fontSize: fontScalling(2.5),
+              textAlign: 'center',
+              textAlignVertical: 'center',
+              marginRight: 10,
+            }}>
+            Fitsuvai company
+          </Text>
+        </View>
+        <View>
           {homeData &&
             homeData.assessments &&
             homeData.assessments.length > 0 && (
@@ -111,7 +133,7 @@ const AssessmentCorousel = ({homeData}) => {
                     overflow: 'hidden',
                   }} //@@
                   autoPlay={true}
-                  autoPlayInterval={1500}
+                  autoPlayInterval={1000}
                   data={homeData.assessments}
                   pagingEnabled={true}
                   onSnapToItem={index => {
@@ -127,20 +149,7 @@ const AssessmentCorousel = ({homeData}) => {
                             id: item.id,
                             assName: item.name,
                           });
-                          // navigation.navigate('Profile', {
-                          //   screen: 'assesments',
-                          //   initial: true,
-                          //   params: {
-                          //     id: item.id,
-                          //     assName: item.name,
-                          //   },
-                          // });
-                          // navigation.navigate(
-                          //   'subscriptionPlanHistory',
-                          // );
                         }}
-                        animation={'zoomIn'}
-                        duration={index * 1000}
                         key={index}
                         style={[
                           styles.assCard,
@@ -157,11 +166,11 @@ const AssessmentCorousel = ({homeData}) => {
                             backgroundColor: appColor.white,
                             padding: widthResponse ? 8 : 15,
                             borderRadius: 200, //@@
-                            height: scrnWidth / 4, //@@
-                            width: scrnWidth / 4, //@@
+                            height: scrnWidth / 3.7, //@@
+                            width: scrnWidth / 3.7, //@@
                             alignItems: 'center',
                             justifyContent: 'center',
-                            marginBottom: widthResponse ? 10 : 20, //@@
+                            marginBottom: widthResponse ? 15 : 20, //@@
                             elevation: 8,
                             shadowOpacity: 0.3,
                             shadowRadius: 5,
@@ -183,41 +192,29 @@ const AssessmentCorousel = ({homeData}) => {
                               'png' ||
                             'JPEG' ||
                             'WEBG' ? (
-                            <Image
+                            <FastImage
                               resizeMode="cover"
                               style={{
                                 width: '100%', //@@
                                 height: '100%', //@@
                                 borderRadius: 200, //@@
                               }}
-                              source={{uri: item.image}}></Image>
+                              source={{uri: item.image}}></FastImage>
                           ) : null}
                         </View>
                         <Text
                           style={{
-                            color: appColor.black,
-                            fontFamily: appFont.rB,
+                            color: appColor.textGrey,
+                            fontFamily: appFont.bB,
                             fontSize: widthResponse
                               ? fontScalling(1.8)
                               : fontScalling(2), //@@,
-                            paddingBottom: 10,
+                            paddingBottom: 5,
                             textTransform: 'capitalize',
                             textAlign: 'center',
                           }}>
                           {item.name}
                         </Text>
-                        {/* <Text
-                            style={{
-                              color:
-                               appColor.black,
-                              fontFamily: appFont.rR,
-                              fontSize: fontScalling(1.5),
-                              paddingBottom: 5,
-                              textTransform: 'capitalize',
-                              textAlign: 'center',
-                            }}>
-                            {item.description}
-                          </Text> */}
                       </Animatable.View>
                     );
                   }}
@@ -268,7 +265,7 @@ const AssessmentCorousel = ({homeData}) => {
             )}
         </View>
       </View>
-    </ImageBackground>
+    </View>
   );
 };
 
@@ -277,9 +274,17 @@ const DashBoard = ({navigation}) => {
   const showToast = useShowToast();
   const isFocus = useIsFocused();
   const {styles} = useStyle();
-  const {userSettings, vegToggle} = useSelector(state => state.setting);
-  const scrollRef = useRef(null);
+  const {vegToggle, AppContents, assesmentRoute, bottomTabPress, userSettings} =
+    useSelector(state => state.setting);
+  const {
+    results,
+    permissionModal,
+    setPermissionModal,
+    checkPermission,
+    startRecognizing,
+  } = useVoiceRecognition();
 
+  const scrollRef = useRef(null);
   const dispatch = useDispatch();
 
   const [backPressCount, setBackPressCount] = useState(0);
@@ -294,8 +299,34 @@ const DashBoard = ({navigation}) => {
   const [formObj, setFormObj] = useState({
     input: '',
   });
+  const [dyKeyWord, setDyKeyWord] = useState('Search Your Favourite Food');
   const botRef = useRef(null);
-  const {assesmentRoute, bottomTabPress} = useSelector(state => state.setting);
+
+  const {userType} = useSelector(state => state.auth);
+
+
+  useEffect(() => {
+    let interval;
+    if (
+      isFocus &&
+      userSettings &&
+      userSettings?.suggestions &&
+      userSettings?.suggestions.length > 0
+    ) {
+      let foods = userSettings?.suggestions.filter(
+        data => data.vegetartin_foods == '1',
+      );
+      interval = setInterval(() => {
+        const randomIndex = Math.floor(Math.random() * foods.length);
+        setDyKeyWord(foods[randomIndex].name);
+      }, 2000);
+      return () => {
+        if (interval) {
+          clearInterval(interval);
+        }
+      };
+    }
+  }, [isFocus, userSettings?.suggestions]);
 
   // api
   const apiCall = async () => {
@@ -314,9 +345,11 @@ const DashBoard = ({navigation}) => {
       }
       // get the response:
       const response = await fetch(url().home, requestOptions);
+
       if (response.status == 200) {
         // requestLocationPermission();
         const resparse = await response.json();
+        // print(resparse, 'resparse');
         if (resparse.status == 'Success') {
           setHomeDatas(resparse.data);
           setLoad(false);
@@ -349,8 +382,6 @@ const DashBoard = ({navigation}) => {
       groups[product.name].push(product);
       return groups;
     }, {});
-
-    // print(groupedProducts, 'groupedProducts');
 
     // Process grouped products
     for (const [productName, productVariants] of Object.entries(
@@ -397,14 +428,6 @@ const DashBoard = ({navigation}) => {
     }
     return filteredProducts;
   }
-
-  //  console.log(sizePriorityProducts);
-
-  // print(
-  //   sizePriorityProducts,
-  //   // applySizeFilter(homeData.vegetarianJuice, ['small', 'medium', 'large']),
-  //   'applySizeFilter',
-  // );
 
   // pull to refresh:
   const onRefresh = useCallback(() => {
@@ -615,31 +638,143 @@ const DashBoard = ({navigation}) => {
           style={[
             {
               marginHorizontal: 15,
-              backgroundColor: appColor.white,
+              backgroundColor: appColor.cardbg,
               borderTopLeftRadius: 20,
               borderTopRightRadius: 20,
               paddingBottom: 20,
               paddingTop: 10,
-              height: 65,
+              height: 68,
             },
           ]}
         />
       </View>
-      <Animatable.View
-        animation={'zoomIn'}
-        duration={1000}
-        onTouchEnd={() => {
-          navigation.navigate('search');
-        }}
-        style={[styles.searchContainer]}>
-        <Icon
-          ComponentName={'FontAwesome'}
-          name={'search'}
-          color={appColor.bgBlack}
-          size={widthResponse ? 20 : 25}
-        />
-        <Text style={styles.placeHolderStyle}>Search Your Favourite Food</Text>
-      </Animatable.View>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'flex-end',
+          justifyContent: 'space-between',
+          marginTop: -60,
+          zIndex: 3,
+          paddingBottom: 5,
+          overflow: 'hidden',
+        }}>
+        <Pressable
+          onPress={() => {
+            navigation.navigate('search');
+          }}
+          style={[styles.searchContainer, {justifyContent: 'space-between'}]}>
+          <Icon
+            ComponentName={'FontAwesome'}
+            name={'search'}
+            color={appColor.Textlightblack}
+            size={widthResponse ? 17 : 25}
+          />
+          <Animatable.Text
+            iterationCount={'infinite'}
+            // iterationDelay={2000}
+            duration={1500}
+            animation={'zoomIn'}
+            style={[styles.placeHolderStyle, {textAlign: 'left'}]}>
+            {dyKeyWord}
+          </Animatable.Text>
+          <Pressable
+            onPress={async () => {
+              const isEnabled = await checkPermission();
+              console.log(isEnabled, 'isEnabled');
+              if (isEnabled) {
+                navigation.navigate('search', {query: true}); // Pass result to next screen
+              } else {
+                setPermissionModal(true);
+              }
+            }}
+            style={{
+              paddingHorizontal: 10,
+              borderLeftWidth: 2,
+              borderLeftColor: appColor.borderColor,
+            }}>
+            <Icon
+              ComponentName={'FontAwesome'}
+              name={'microphone'}
+              color={appColor.ratingGold}
+              size={widthResponse ? 23 : 25}
+            />
+          </Pressable>
+          {/* <Pressable
+            onPress={async () => {
+              (await checkPermission())
+                ? startRecognizing()
+                : setPermissionModal(true);
+            }}
+            style={{
+              paddingHorizontal: 10,
+              borderLeftWidth: 2,
+              // paddingVertical: 5,
+              borderLeftColor: appColor.borderColor,
+            }}>
+            <Icon
+              ComponentName={'FontAwesome'}
+              name={'microphone'}
+              color={appColor.ratingGold}
+              size={widthResponse ? 23 : 25}
+            />
+          </Pressable> */}
+        </Pressable>
+
+        <Animatable.View
+          animation={'zoomIn'}
+          duration={400}
+          style={{
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderColor: appColor.borderColor,
+            marginRight: 20,
+            paddingHorizontal: 3,
+            // borderWidth: 1,
+            borderRadius: 15,
+            marginLeft: 5,
+            paddingVertical: 2,
+            // backgroundColor: appColor.borderColor,
+          }}>
+          <Animatable.Text
+            animation={'zoomIn'}
+            duration={1000}
+            style={{
+              color: vegToggle ? appColor.gold : appColor.textGrey,
+              fontFamily: appFont.bB,
+              fontSize: fontScalling(1.8),
+              paddingBottom: 5,
+            }}>
+            Veg{' '}
+            <Animatable.Text
+              style={{
+                color: !vegToggle ? appColor.gold : appColor.textGrey,
+                fontFamily: appFont.bB,
+                fontSize: fontScalling(1.8),
+                paddingBottom: 5,
+              }}>
+              Mode
+            </Animatable.Text>
+          </Animatable.Text>
+
+          <Toggle
+            type="green"
+            isActive={vegToggle}
+            onPress={() => {
+              dispatch(setVegToggle(!vegToggle));
+            }}
+            style={{
+              borderRadius: 15,
+              backgroundColor: appColor.white,
+              paddingHorizontal: 4,
+              paddingRight: 8,
+              paddingVertical: 6,
+              elevation: 0.5,
+              borderWidth: 1,
+              borderColor: appColor.lightGreyLine,
+            }}
+          />
+        </Animatable.View>
+      </View>
       {load ? (
         <ScrollView>
           <DashShimmer />
@@ -648,8 +783,8 @@ const DashBoard = ({navigation}) => {
         <SafeAreaView
           style={{
             flex: 1,
-            backgroundColor: appColor.white,
-            paddingTop: 10,
+            backgroundColor: appColor.cartBg,
+            // paddingTop: 10,
             // overflow: 'visible',
           }}>
           <ScrollView
@@ -666,181 +801,242 @@ const DashBoard = ({navigation}) => {
             contentContainerStyle={{paddingBottom: widthResponse ? 91 : 140}} //@@
             showsVerticalScrollIndicator={false}>
             {objectLength(homeData) && arrayLength(homeData.banner) && (
-              <View>
-                <ImageBackground
-                  source={{uri: homeData?.banner[0]?.backgroundimage}}
+              <View style={styles.banner1Bg}>
+                <FastImage
+                  source={{
+                    priority: FastImage.priority.high,
+                    uri: homeData?.banner[0]?.backgroundimage,
+                  }}
                   resizeMode="cover"
-                  style={[styles.banner1Bg]}>
-                  <View style={styles.bnrContainer}>
-                    {/* left container */}
+                  style={{...StyleSheet.absoluteFillObject}}
+                />
+                <View style={styles.bnrContainer}>
+                  {/* left container */}
+                  <View
+                    style={[
+                      styles.leftContainer,
+                      {
+                        flexWrap: 'wrap',
+                        width: '47%',
+                        flexDirection: 'row',
+                      },
+                    ]}>
+                    {homeData?.banner[0].heading
+                      .split(' ')
+                      .map((data, index) => {
+                        return (
+                          <Text
+                            key={index}
+                            style={{
+                              color:
+                                index ==
+                                homeData?.banner[0].heading.split(' ').length -
+                                  1
+                                  ? appColor.gold
+                                  : appColor.white,
+                              fontFamily: appFont.bB,
+                              fontSize: fontScalling(2.8),
+                              paddingBottom: 8,
+                              paddingRight: 8,
+                            }}>
+                            {data}
+                          </Text>
+                        );
+                      })}
+
+                    <View style={{marginBottom: 15}} />
+                    {homeData?.banner[0]?.button_text && (
+                      <Animatable.View
+                        animation={'zoomIn'}
+                        duration={1000}
+                        style={{
+                          backgroundColor: appColor.white,
+                          paddingVertical: 5,
+                          paddingHorizontal: 15,
+                          borderRadius: 15,
+                          alignSelf: 'flex-start',
+                          elevation: 3,
+                          borderWidth: 0.8,
+                          borderColor: appColor.textGrey,
+                        }}>
+                        <Pressable
+                          onPress={() => {
+                            navigation.navigate('menu');
+                          }}>
+                          <Text
+                            style={{
+                              color: appColor.Textlightblack,
+                              fontFamily: appFont.bB,
+                              fontSize: fontScalling(1.7),
+                            }}>
+                            {homeData?.banner[0]?.button_text}
+                          </Text>
+                        </Pressable>
+                      </Animatable.View>
+                    )}
+                  </View>
+                  {/* right container   //@@ */}
+                  <View style={[styles.rightContainer]}>
                     <View
                       style={[
-                        styles.leftContainer,
                         {
-                          flexWrap: 'wrap',
-                          width: '50%',
                           flexDirection: 'row',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          transform: [{rotate: '45deg'}],
                         },
                       ]}>
-                      {homeData?.banner[0].heading
-                        .split(' ')
-                        .map((data, index) => {
-                          return (
-                            <Text
-                              key={index}
-                              style={{
-                                color:
-                                  index ==
-                                  homeData?.banner[0].heading.split(' ')
-                                    .length -
-                                    1
-                                    ? appColor.gold
-                                    : appColor.white,
-                                fontFamily: appFont.bB,
-                                fontSize: fontScalling(3.5),
-                                paddingBottom: 10,
-                                paddingRight: 5,
-                              }}>
-                              {data}
-                            </Text>
-                          );
-                        })}
-
-                      {homeData?.banner[0]?.button_text && (
-                        <Animatable.View
-                          animation={'zoomIn'}
-                          duration={1000}
-                          style={{
-                            backgroundColor: appColor.white,
-                            paddingVertical: 5,
-                            paddingHorizontal: 15,
-                            borderRadius: 15,
-                            alignSelf: 'flex-start',
-                            elevation: 3,
-                          }}>
-                          <Pressable
-                            onPress={() => {
-                              navigation.navigate('menu');
-                            }}>
-                            <Text
-                              style={{
-                                color: appColor.black,
-                                fontFamily: appFont.bB,
-                                fontSize: fontScalling(2),
-                              }}>
-                              {homeData?.banner[0]?.button_text}
-                            </Text>
-                          </Pressable>
-                        </Animatable.View>
-                      )}
-                    </View>
-                    {/* right container   //@@ */}
-                    <View style={[styles.rightContainer]}>
-                      <View
-                        style={[
-                          {
-                            flexDirection: 'row',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            transform: [{rotate: '45deg'}],
-                          },
-                        ]}>
+                      <FastImage
+                        resizeMode="contain"
+                        // animation={'bounceIn'}
+                        // duration={1500}
+                        // delay={100}
+                        resizeMethod="cover"
+                        style={{
+                          width: scrnWidth / 4.5,
+                          height: scrnWidth / 4.5,
+                        }}
+                        source={{
+                          uri: homeData?.banner[0].image2,
+                        }}></FastImage>
+                      <FastImage
+                        // animation={'bounceIn'}
+                        // duration={1500}
+                        // delay={100}
+                        resizeMethod="cover"
+                        style={{
+                          width: scrnWidth / 4.5,
+                          height: scrnWidth / 4.5,
+                        }}
+                        source={{
+                          uri: homeData?.banner[0].image3,
+                        }}></FastImage>
+                      <Animatable.View
+                        animation={'zoomIn'}
+                        duration={500}
+                        delay={1000}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          position: 'absolute',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          bottom: 5,
+                          right: 5,
+                        }}>
                         <Animatable.Image
-                          resizeMode="contain"
-                          animation={'bounceIn'}
-                          duration={1500}
-                          delay={100}
-                          resizeMethod="cover"
+                          animation={Rotate}
+                          easing={'linear'}
+                          duration={4000}
+                          iterationCount={'infinite'}
+                          source={{uri: homeData?.banner[0].image1}}
                           style={{
-                            width: scrnWidth / 4.5,
-                            height: scrnWidth / 4.5,
+                            width: scrnWidth / 3.6,
+                            height: scrnWidth / 3.6,
                           }}
-                          source={{
-                            uri: homeData?.banner[0].image2,
-                          }}></Animatable.Image>
-                        <Animatable.Image
-                          animation={'bounceIn'}
-                          duration={1500}
-                          delay={100}
-                          resizeMethod="cover"
-                          style={{
-                            width: scrnWidth / 4.5,
-                            height: scrnWidth / 4.5,
-                          }}
-                          source={{
-                            uri: homeData?.banner[0].image3,
-                          }}></Animatable.Image>
-                        <Animatable.View
-                          animation={'zoomIn'}
-                          duration={500}
-                          delay={1000}
-                          style={{
-                            width: '100%',
-                            height: '100%',
-                            position: 'absolute',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            bottom: 5,
-                            right: 5,
-                          }}>
-                          <Animatable.Image
-                            animation={Rotate}
-                            easing={'linear'}
-                            duration={4000}
-                            iterationCount={'infinite'}
-                            source={{uri: homeData?.banner[0].image1}}
-                            style={{
-                              width: scrnWidth / 3.3,
-                              height: scrnWidth / 3.3,
-                            }}
-                          />
-                        </Animatable.View>
-                      </View>
+                        />
+                      </Animatable.View>
                     </View>
                   </View>
-                </ImageBackground>
+                </View>
               </View>
             )}
+            {/* Sign up Intimation Block */}
+
+            {userType ==='guest'&&<Pressable
+            onPress={()=>navigation.navigate('register')}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                borderRadius: 10,
+                borderColor: appColor.ratingGold,
+                borderWidth: 1,
+                marginHorizontal: 15,
+                paddingHorizontal: 15,
+                paddingVertical: 10,
+                marginBottom: 10,
+                backgroundColor: appColor.cardBack,
+                elevation: 10,
+                shadowColor: appColor.gold,
+                // width:'100%'
+              }}>
+              <Text
+                style={[
+                  {
+                    fontFamily: appFont.rM,
+                    fontSize: fontScalling(2),
+                    color: appColor.gold,
+                    width: '85%',
+                  },
+                ]}>
+                Sign up now to receive exclusive offers & access to new courses.
+              </Text>
+              <Pressable
+                style={{
+                  borderRadius: 30,
+                  borderColor: appColor.borderColor,
+                  borderWidth: 0.7,
+                  padding: 10,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  elevation:10,
+                  shadowColor:appColor.ToastSuccess,
+                  backgroundColor:appColor.cardbg
+                }}>
+                <Animatable.View
+                  animation={'zoomIn'}
+                  iterationCount={'infinite'}
+                  iterationDelay={500}>
+                  <Icon
+                    color={appColor.bgBlack}
+                    size={15}
+                    ComponentName={'Entypo'}
+                    name={'login'}
+                  />
+                </Animatable.View>
+              </Pressable>
+            </Pressable>}
             {/* Assesment container */}
             {homeData && Object.keys(homeData).length > 0 && (
               <AssessmentCorousel homeData={homeData} />
             )}
-            {objectLength(homeData) &&
-              arrayLength(homeData.traditionalFoods) && (
-                <>
-                  {/* Side Heading */}
-                  <SideHeading
-                    title={'Traditional Foods'}
-                    onPress={() =>
-                      navigation.navigate('productOverView', {
-                        context: 'filteredProducts',
-                        name: 'traditionalFoods',
-                      })
-                    }
+            {objectLength(homeData) && arrayLength(homeData.healthySnacks) && (
+              <>
+                {/* Side Heading */}
+                <SideHeading
+                  title={'Super Bowls / Super Meals'}
+                  onPress={() =>
+                    navigation.navigate('productOverView', {
+                      context: 'filteredProducts',
+                      name: 'healthySnacks',
+                    })
+                  }
+                />
+                {/* card section */}
+                <View
+                  style={{
+                    marginLeft: 20,
+                    borderRadius: 10,
+                    overflow: 'hidden',
+                  }}>
+                  <FlatList
+                    showsHorizontalScrollIndicator={false}
+                    horizontal={true}
+                    data={applySizeFilterWithRate(homeData.healthySnacks).slice(
+                      0,
+                      4,
+                    )}
+                    keyExtractor={(data, index) => index}
+                    renderItem={({item, index}) => {
+                      return (
+                        <ProductCard key={index} item={item} ind={index} />
+                      );
+                    }}
                   />
-                  {/* card section */}
-                  <View
-                    style={{
-                      marginLeft: 15,
-                      borderRadius: 10,
-                      overflow: 'hidden',
-                    }}>
-                    <FlatList
-                      showsHorizontalScrollIndicator={false}
-                      horizontal={true}
-                      data={applySizeFilterWithRate(
-                        homeData.traditionalFoods,
-                      ).slice(0, 6)}
-                      keyExtractor={(data, index) => index}
-                      renderItem={({item, index}) => {
-                        return (
-                          <ProductCard key={index} item={item} ind={index} />
-                        );
-                      }}
-                    />
-                  </View>
-                </>
-              )}
+                </View>
+              </>
+            )}
 
             {/* Banner slider_1 */}
             {objectLength(homeData) && arrayLength(homeData.bannerBlock1) && (
@@ -855,24 +1051,24 @@ const DashBoard = ({navigation}) => {
                 <SliderCarosal data={homeData.bannerBlock1} />
               </View>
             )}
-            {/* Body Building Meals */}
+
             {objectLength(homeData) &&
-              arrayLength(homeData.bodyBuildingmeals) && (
+              arrayLength(homeData.vegetarianJuice) && (
                 <>
                   {/* Side Heading */}
                   <SideHeading
-                    title={'Healthy Quick Bites'}
+                    title={'Vegetarian food'}
                     onPress={() =>
                       navigation.navigate('productOverView', {
                         context: 'filteredProducts',
-                        name: 'bodyBuildingMeals',
+                        name: 'vegetarian',
                       })
                     }
                   />
                   {/* card section */}
                   <View
                     style={{
-                      marginLeft: 15,
+                      marginLeft: 20,
                       borderRadius: 10,
                       overflow: 'hidden',
                     }}>
@@ -880,7 +1076,7 @@ const DashBoard = ({navigation}) => {
                       showsHorizontalScrollIndicator={false}
                       horizontal={true}
                       data={applySizeFilterWithRate(
-                        homeData.bodyBuildingmeals,
+                        homeData.vegetarianJuice,
                       ).slice(0, 4)}
                       keyExtractor={(data, index) => index}
                       renderItem={({item, index}) => {
@@ -906,42 +1102,6 @@ const DashBoard = ({navigation}) => {
                 <SliderCarosal data={homeData.bannerBlock2} />
               </View>
             )}
-            {objectLength(homeData) && arrayLength(homeData.healthySnacks) && (
-              <>
-                {/* Side Heading */}
-                <SideHeading
-                  title={'Super Bowls / Super Meals'}
-                  onPress={() =>
-                    navigation.navigate('productOverView', {
-                      context: 'filteredProducts',
-                      name: 'healthySnacks',
-                    })
-                  }
-                />
-                {/* card section */}
-                <View
-                  style={{
-                    marginLeft: 15,
-                    borderRadius: 10,
-                    overflow: 'hidden',
-                  }}>
-                  <FlatList
-                    showsHorizontalScrollIndicator={false}
-                    horizontal={true}
-                    data={applySizeFilterWithRate(homeData.healthySnacks).slice(
-                      0,
-                      4,
-                    )}
-                    keyExtractor={(data, index) => index}
-                    renderItem={({item, index}) => {
-                      return (
-                        <ProductCard key={index} item={item} ind={index} />
-                      );
-                    }}
-                  />
-                </View>
-              </>
-            )}
 
             {/* Banner slider_3 */}
             {objectLength(homeData) && arrayLength(homeData.bannerBlock2) && (
@@ -956,24 +1116,24 @@ const DashBoard = ({navigation}) => {
                 <SliderCarosal data={homeData.bannerBlock3} />
               </View>
             )}
-
+            {/* Body Building Meals */}
             {objectLength(homeData) &&
-              arrayLength(homeData.vegetarianJuice) && (
+              arrayLength(homeData.bodyBuildingmeals) && (
                 <>
                   {/* Side Heading */}
                   <SideHeading
-                    title={'Vegetarian food'}
+                    title={'Healthy Quick Bites'}
                     onPress={() =>
                       navigation.navigate('productOverView', {
                         context: 'filteredProducts',
-                        name: 'vegetarian',
+                        name: 'bodyBuildingMeals',
                       })
                     }
                   />
                   {/* card section */}
                   <View
                     style={{
-                      marginLeft: 15,
+                      marginLeft: 20,
                       borderRadius: 10,
                       overflow: 'hidden',
                     }}>
@@ -981,7 +1141,7 @@ const DashBoard = ({navigation}) => {
                       showsHorizontalScrollIndicator={false}
                       horizontal={true}
                       data={applySizeFilterWithRate(
-                        homeData.vegetarianJuice,
+                        homeData.bodyBuildingmeals,
                       ).slice(0, 4)}
                       keyExtractor={(data, index) => index}
                       renderItem={({item, index}) => {
@@ -993,34 +1153,213 @@ const DashBoard = ({navigation}) => {
                   </View>
                 </>
               )}
-          </ScrollView>
+            {objectLength(homeData) &&
+              arrayLength(homeData.traditionalFoods) && (
+                <>
+                  {/* Side Heading */}
+                  <SideHeading
+                    title={'Traditional Foods'}
+                    onPress={() =>
+                      navigation.navigate('productOverView', {
+                        context: 'filteredProducts',
+                        name: 'traditionalFoods',
+                      })
+                    }
+                  />
+                  {/* card section */}
+                  <View
+                    style={{
+                      marginLeft: 20,
+                      borderRadius: 10,
+                      overflow: 'hidden',
+                    }}>
+                    <FlatList
+                      showsHorizontalScrollIndicator={false}
+                      horizontal={true}
+                      data={applySizeFilterWithRate(
+                        homeData.traditionalFoods,
+                      ).slice(0, 6)}
+                      keyExtractor={(data, index) => index}
+                      renderItem={({item, index}) => {
+                        return (
+                          <ProductCard key={index} item={item} ind={index} />
+                        );
+                      }}
+                    />
+                  </View>
+                </>
+              )}
 
+            {/* usp Content */}
+            <View
+              style={{
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginTop: 10,
+                paddingVertical: 15,
+                paddingHorizontal: 20,
+                marginHorizontal: 10,
+                borderRadius: 10,
+                overflow: 'hidden',
+              }}>
+              <FastImage
+                resizeMode="cover"
+                source={require('../../../assets/images/assesment_bg.png')}
+                style={{...StyleSheet.absoluteFillObject}}
+              />
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'flex-start',
+                  paddingBottom: 8,
+                  width: '100%',
+                }}>
+                {AppContents && AppContents?.fssai_pdf != '' && (
+                  <Pressable
+                    onPress={() => {
+                      navigation.navigate('menuScreen', {
+                        menuPdf: AppContents?.fssai_pdf,
+                        scrnShot: false,
+                      });
+                    }}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      width: '42%',
+                    }}>
+                    <Text
+                      style={[
+                        styles.roboto_light,
+                        {
+                          color: appColor.white,
+                          paddingRight: 10,
+                          fontSize: fontScalling(2.2),
+                          fontFamily: appFont.bR,
+                          textDecorationLine: 'underline',
+                        },
+                      ]}>
+                      Fssai Certified :
+                    </Text>
+
+                    <FastImage
+                      style={{
+                        width: 40,
+                        height: 20,
+                        borderRadius: 10,
+                        marginRight: 10,
+                      }}
+                      source={require('../../../assets/images/fssai.png')}
+                    />
+                    <Icon
+                      color={appColor.white}
+                      size={21}
+                      ComponentName={'FontAwesome'}
+                      name={'file-pdf-o'}
+                    />
+                  </Pressable>
+                )}
+              </View>
+              {AppContents && AppContents.usp != '' && (
+                <FlatList
+                  showsHorizontalScrollIndicator={false}
+                  horizontal={true}
+                  data={AppContents.usp}
+                  renderItem={({item, index}) => {
+                    return <BottomCard item={item} />;
+                  }}
+                />
+              )}
+            </View>
+          </ScrollView>
+          {/* menu */}
+          <Pressable
+            onPress={() => {
+              navigation.navigate('menu');
+            }}
+            style={{
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              position: 'absolute',
+              bottom: widthResponse ? 80 : 140, //@@
+              overflow: 'hidden',
+              paddingBottom: 95,
+              right: 15,
+            }}>
+            <View
+              style={{
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 60,
+                height: 60,
+                borderRadius: 60,
+                backgroundColor: appColor.bgBlack,
+                padding: 10,
+              }}>
+              <Animatable.Image
+                animation={'bounceIn'}
+                duration={1000}
+                resizeMode="center"
+                style={{
+                  width: widthResponse ? 32.5 : 55,
+                  height: widthResponse ? 32.5 : 55,
+                }}
+                source={require('../../../assets/images/book.png')}
+              />
+              <Text
+                style={[
+                  {
+                    color: appColor.white,
+                    fontFamily: appFont.bB,
+                    paddingTop: 2.5,
+                    fontSize: fontScalling(1.5),
+                    letterSpacing: 1,
+                  },
+                ]}>
+                Menu
+              </Text>
+            </View>
+          </Pressable>
           {/* chat bot logo */}
           <Pressable
             onPress={() => setChatbot(true)}
             style={{
-              padding: 5,
-              zIndex: 100,
-              backgroundColor: appColor.themeYellowDark,
+              alignItems: 'center',
+              justifyContent: 'space-between',
               position: 'absolute',
-              bottom: widthResponse ? 95 : 140, //@@
-              right: widthResponse ? 20 : 40,
-              borderRadius: 10,
+              bottom: widthResponse ? 80 : 140, //@@
+              right: widthResponse ? -25 : 40,
+              right: 2.5,
+              borderRadius: 80,
+              borderRadius: 50,
+              overflow: 'hidden',
             }}>
-            <View
+            <LottieView
+              resizeMode="contain"
+              autoPlay={true}
+              style={{width: 85, height: 85}}
+              source={{
+                uri: 'https://lottie.host/27aeaf27-5b9e-4b35-b68f-4d722547dba7/JvTWInRvvO.lottie',
+              }}
+            />
+            <Animatable.Text
+              animation={'bounceIn'}
+              duration={1000}
+              iterationCount={'infinite'}
+              iterationDelay={500}
               style={{
-                padding: 5,
-                borderRadius: 5,
-                elevation: 5,
-                backgroundColor: appColor.themeYellow,
+                color: appColor.white,
+                fontSize: fontScalling(1.3),
+                fontFamily: appFont.rM,
+                marginTop: -10,
+                paddingHorizontal: 5,
+                paddingVertical: 2,
+                borderRadius: 4,
+                backgroundColor: appColor.gold,
               }}>
-              <Icon
-                ComponentName={'MaterialIcons'}
-                name={'chat'}
-                size={widthResponse ? 33 : 40}
-                color={appColor.bgWhite}
-              />
-            </View>
+              Chat
+            </Animatable.Text>
           </Pressable>
 
           {/* chatbot modal */}
@@ -1246,6 +1585,14 @@ const DashBoard = ({navigation}) => {
               </View>
             </View>
           </ModalBottomSheet>
+          {/* Modal for Voice recoganizing */}
+          <VoiceRecordCard results={results} />
+          <RecordModal
+            isVisible={permissionModal}
+            setPermissionModal={setPermissionModal}
+            startRecognizing={startRecognizing}
+            isDashboard={true}
+          />
         </SafeAreaView>
       )}
     </>
@@ -1269,20 +1616,21 @@ const useStyle = () => {
     searchContainer: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: 10,
+      paddingHorizontal: 8,
       paddingVertical: 12,
-      borderRadius: 15,
-      backgroundColor: appColor.greyBg,
+      borderRadius: 10,
+      backgroundColor: appColor.white,
       justifyContent: 'flex-start',
-      marginHorizontal: 20,
-      marginTop: -55,
-      zIndex: 3,
+      marginLeft: 25,
+      flex: 1,
       overflow: 'visible',
+      elevation: 15,
+      shadowColor: appColor.Textlightblack,
     },
     placeHolderStyle: {
       fontFamily: appFont.rR,
-      color: appColor.placeHolderText,
-      fontSize: fontScalling(2),
+      color: appColor.textGrey,
+      fontSize: fontScalling(1.9),
       paddingLeft: 10,
     },
     banner1Bg: {
@@ -1316,8 +1664,13 @@ const useStyle = () => {
       // height: '100%',
     },
     assesMentContainer: {
-      width: '100%',
-      paddingTop: 10,
+      // width: '100%',
+      paddingVertical: 10,
+      marginTop: 5,
+      overflow: 'hidden',
+      borderRadius: 10,
+      // elevation: 1.2,
+      marginHorizontal: 15,
     },
     assInnerCon: {
       paddingHorizontal: 10,
@@ -1326,12 +1679,13 @@ const useStyle = () => {
     assCard: {
       // borderWidth: 1.5,
       paddingHorizontal: 10,
-      borderRadius: 15,
+      borderRadius: 25,
       width: scrnWidth / 2.7, //@@
       height: scrnWidth / 2.2, //@@
       alignItems: 'center',
       justifyContent: 'center', //@@
       overflow: 'hidden',
+      elevation: 2,
       // marginBottom: 25,
     },
     baby_blk: {

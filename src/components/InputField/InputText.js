@@ -99,16 +99,18 @@ export function InputText({
   return (
     <View style={[{paddingBottom: widthResponse ? 12 : 17}, customStyle]}>
       {/* label */}
-      <Text
-        style={{
-          color: dark ? appColors.textWhite : appColors.textBlack,
-          fontFamily: appFont.rM,
-          paddingBottom: widthResponse ? 7 : 12,
-          fontSize: fontScalling(1.7),
-        }}>
-        {Title}
-        {required && <Text style={{color: appColors.ToastError}}>*</Text>}
-      </Text>
+      {Title && Title != '' && (
+        <Text
+          style={{
+            color: dark ? appColors.textWhite : appColors.textBlack,
+            fontFamily: appFont.rM,
+            paddingBottom: widthResponse ? 7 : 12,
+            fontSize: fontScalling(1.7),
+          }}>
+          {Title}
+          {required && <Text style={{color: appColors.ToastError}}>*</Text>}
+        </Text>
+      )}
       {/* input field */}
       <Pressable
         onPress={

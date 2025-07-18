@@ -12,6 +12,8 @@ import appColors from '../../utilities/appColors';
 import {
   fontScalling,
   print,
+  scrnHeight,
+  scrnWidth,
   widthResponse,
 } from '../../utilities/helperFunction';
 import {appFont} from '../../utilities/appFont';
@@ -21,6 +23,7 @@ import {url} from '../../utilities/appApi';
 import {SvgCssUri} from 'react-native-svg';
 import {SubscriptionShimmer} from '../../utilities/appShimmer';
 import {useIsFocused} from '@react-navigation/native';
+import LottieView from 'lottie-react-native';
 
 const SubscriptionOverview = ({navigation}) => {
   const appColor = appColors();
@@ -50,7 +53,6 @@ const SubscriptionOverview = ({navigation}) => {
       };
       // get the response:
       const response = await fetch(url().subscriptions, requestOptions);
-      print(response, 'response ---');
 
       if (response.status == 200) {
         const resparse = await response.json();
@@ -119,8 +121,11 @@ const SubscriptionOverview = ({navigation}) => {
                           item.plan_status == 'Active'
                             ? appColor.lightGreen
                             : item.plan_status == 'Pending'
-                            ? appColor.ratingGray
+                            ? appColor.white
                             : appColor.cardbg,
+                        elevation: 1.2,
+                        borderWidth: 1,
+                        borderColor: appColor.borderColor,
                       },
                     ]}>
                     <View
@@ -130,11 +135,11 @@ const SubscriptionOverview = ({navigation}) => {
                       <Text
                         style={{
                           fontFamily: appFont.bB,
-                          color: appColor.black,
-                          fontSize: fontScalling(2.7),
+                          color: appColor.Textlightblack,
+                          fontSize: fontScalling(2.4),
                           marginBottom: widthResponse ? 2 : 5,
                         }}>
-                        {`${item.membership}  id: ${item.id}`}
+                        {` ${item.membership} Plan `}
                       </Text>
                       <Text
                         style={{
@@ -164,7 +169,7 @@ const SubscriptionOverview = ({navigation}) => {
                     </View>
                     <View
                       style={{
-                        alignItems: 'center',
+                        alignItems: 'flex-start',
                         justifyContent: 'space-between',
                       }}>
                       {item.payment_method != '-' && (
@@ -225,7 +230,7 @@ const SubscriptionOverview = ({navigation}) => {
                               ? appColor.gold
                               : appColor.deactive,
                           paddingHorizontal: widthResponse ? 10 : 14,
-                          paddingVertical: widthResponse ? 6 : 9,
+                          paddingVertical: widthResponse ? 3 : 9,
                           borderRadius: 20,
                           borderWidth: 1,
                           borderColor:
@@ -271,7 +276,18 @@ const SubscriptionOverview = ({navigation}) => {
                 alignItems: 'center',
                 justifyContent: 'center',
               }}>
-              <Text style={{fontFamily: appFont.bB, fontSize: fontScalling(2)}}>
+              <LottieView
+                source={require('../../../assets/lottieFiles/emptyProduct.json')}
+                style={{width: scrnWidth / 1.7, height: scrnHeight / 4.5}}
+                autoPlay
+                loop={true}
+              />
+              <Text
+                style={{
+                  fontFamily: appFont.bB,
+                  fontSize: fontScalling(2),
+                  color: appColor.gold,
+                }}>
                 No Plan's available
               </Text>
             </View>
@@ -289,7 +305,7 @@ const SubscriptionOverview = ({navigation}) => {
   };
 
   return (
-    <View style={{backgroundColor: appColor.white, flex: 1}}>
+    <View style={{backgroundColor: appColor.textGrey, flex: 1}}>
       <MainCard
         altStyle={{
           paddingHorizontal: 10, //@@
@@ -305,8 +321,8 @@ export default SubscriptionOverview;
 
 const styles = StyleSheet.create({
   listCard: {
-    paddingHorizontal: widthResponse ? 20 : 25,
-    paddingVertical: widthResponse ? 20 : 25,
-    borderRadius: 20,
+    paddingHorizontal: widthResponse ? 12.5 : 15,
+    paddingVertical: widthResponse ? 15 : 25,
+    borderRadius: 12.5,
   },
 });

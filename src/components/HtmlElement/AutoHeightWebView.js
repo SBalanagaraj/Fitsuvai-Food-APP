@@ -13,10 +13,11 @@
 import {StyleSheet, Text, View} from 'react-native';
 import AutoHeightWebView from 'react-native-autoheight-webview';
 import React from 'react';
-import {scrnHeight, scrnWidth} from '../../utilities/helperFunction';
+import {print, scrnHeight, scrnWidth} from '../../utilities/helperFunction';
 import appColors from '../../utilities/appColors';
 
 const AutoHeightHTML = ({url, AdjustHeight = false}) => {
+  // print(url, 'url');
   const htmlContent = `<html>
                           <head>
                             <style>
@@ -33,6 +34,20 @@ const AutoHeightHTML = ({url, AdjustHeight = false}) => {
                                   padding-bottom: 0px;
                                   padding-left: 15px;
                                   text-align: left;
+                              }
+                                    table {
+                                width: 100%;
+                                border-collapse: collapse;
+                                margin-top: 10px;
+                              }
+                              th, td {
+                                border: 1px solid #000;
+                                text-align: center;
+                                color:#000;
+                              }
+                              th {
+                                background-color: #fff;
+                                font-weight: bold;
                               }
                             </style>
                           </head>
@@ -59,10 +74,12 @@ const AutoHeightHTML = ({url, AdjustHeight = false}) => {
       source={{
         html: htmlContent,
       }}
+      // scalesPageToFit={false}
+      // viewportContent={
+      //   'width=device-width,height=device-height, user-scalable=no'
+      // }
       scalesPageToFit={false}
-      viewportContent={
-        'width=device-width,height=device-height, user-scalable=no'
-      }
+      viewportContent="width=device-width,height=device-height,user-scalable=no"
     />
   );
 };

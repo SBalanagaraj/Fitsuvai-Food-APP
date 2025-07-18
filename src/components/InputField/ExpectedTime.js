@@ -9,6 +9,8 @@ import {
 import {appFont} from '../../utilities/appFont';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import {Icon} from '../../utilities/icon';
+import {useDispatch, useSelector} from 'react-redux';
+import {setSelectedTime} from '../../redux/SettingSlice';
 
 const ExpectedTime = ({
   expectedTime = {devision: 'AM', time: ''},
@@ -22,10 +24,32 @@ const ExpectedTime = ({
 }) => {
   const {styles} = useStyles();
   const appColor = appColors();
+  const dispath = useDispatch();
 
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+  const [dateObj, setDateObj] = useState(false);
+  // const {selectedTime} = useSelector(state => state.setting);
 
   const hideDatePicker = () => {
+    if (dark) {
+      onChange(preData => {
+        return {
+          ...preData,
+          [section]: {
+            ...preData[section],
+            // time: '',
+            isValid: false,
+            // isErrValid: true,
+          },
+        };
+      });
+    } else if (!dark) {
+      onChange(preData => ({
+        ...preData,
+        // time: '',
+        isValid: false,
+      }));
+    }
     setDatePickerVisibility(!isDatePickerVisible);
   };
 
@@ -39,10 +63,10 @@ const ExpectedTime = ({
   };
 
   const handleConfirm = (event, date) => {
-    print(formatTime(date), 'formatTime');
+    // dispath(setSelectedTime(date));
+    setDateObj(date);
     if (dark) {
       onChange(preData => {
-        print(preData, 'preData');
         return {
           ...preData,
           [section]: {
@@ -60,14 +84,16 @@ const ExpectedTime = ({
         isValid: true,
       }));
     }
-    hideDatePicker();
+    console.log('handle');
+    setDatePickerVisibility(false);
   };
+  console.log(isDatePickerVisible,'isDatePickerVisible');
 
   useEffect(() => {
     if (dark) {
       setTimeout(() => {
         onChange(preData => {
-          print(preData, 'preData');
+          // print(preData, 'preData');
           return {
             ...preData,
             [section]: {
@@ -106,9 +132,7 @@ const ExpectedTime = ({
           {dark ? title : 'Select your expected delivery time:'}
         </Text>
         <Pressable
-          onPress={() => {
-            hideDatePicker();
-          }}
+          onPress={hideDatePicker}
           style={{
             borderWidth: 1.5,
             borderColor: dark ? appColor.bgBlack : appColor.borderColor,
@@ -122,9 +146,6 @@ const ExpectedTime = ({
             elevation: 0.4,
           }}>
           <Text
-            onPress={() => {
-              hideDatePicker();
-            }}
             style={{
               // paddingHorizontal: 15,
               paddingVertical: 15,
@@ -134,10 +155,12 @@ const ExpectedTime = ({
               fontSize: fontScalling(2),
               color: dark
                 ? value.time == ''
-                  ? appColor.lightGreyLine
+                  ? dark
+                    ? appColor.lightGreyLine
+                    : appColor.TextInputborderbg
                   : appColor.white
                 : value.time == ''
-                ? appColor.lightGreyLine
+                ? appColor.Textlightblack
                 : appColor.bgBlack,
               opacity: value.time == '' ? 0.4 : 1,
             }}>
@@ -168,7 +191,7 @@ const ExpectedTime = ({
       {isDatePickerVisible && (
         <DateTimePicker
           mode="time"
-          value={new Date()}
+          value={new Date(dateObj)}
           onChange={handleConfirm}
           onCancel={hideDatePicker}
           display={Platform.OS == 'ios' ? 'spinner' : 'default'}

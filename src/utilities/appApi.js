@@ -21,6 +21,7 @@ import {
   ADDRESS,
   LOGIN,
   LOGOUT,
+  SIGNUP,
   DELETEACCOUNT,
   AUTHONTICATION,
   CHATBOT,
@@ -29,6 +30,8 @@ import {
   SUBSCRIPTIONS,
   NOTIFICATION,
   ADMIN,
+  SEARCHSUGGESTION,
+  CONTENT,
   // DefaultValues
   APIKEY,
   // SVG PATH
@@ -38,13 +41,14 @@ import {
   REPUTATION_SVG,
   STEP_4_1HOV,
   STEP_4_1,
+  currentClientid,
 } from '@env';
 
 const baseUrl = BASE_URL;
 
 const baseURL = BASE_URL + CONTROLLER;
 
-console.log(CANCELORDER, 'url--');
+console.log(CANCELORDER, 'url-----');
 
 export const url = () => ({
   //   url
@@ -75,8 +79,10 @@ export const url = () => ({
   reviewApi: baseURL + PRODUCTREVIEW,
   subscriptions: baseURL + SUBSCRIPTIONS,
   notification: baseURL + NOTIFICATION,
+  searchSuggestion: baseURL + SEARCHSUGGESTION,
+  content: baseURL + CONTENT,
+  signUp: baseURL + SIGNUP,
   admin: baseUrl + ADMIN,
-
   // DefaultValues
   apiKey: APIKEY,
   //   images
@@ -86,4 +92,5 @@ export const url = () => ({
   reputation: baseUrl + SVG_PATH + REPUTATION_SVG,
   step_4_1: baseUrl + SVG_PATH + STEP_4_1,
   step_4_1hov: baseUrl + SVG_PATH + STEP_4_1HOV,
+  currentClientid: currentClientid,
 });

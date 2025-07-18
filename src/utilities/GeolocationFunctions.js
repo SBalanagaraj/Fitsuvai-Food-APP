@@ -186,25 +186,51 @@ export function getCoordinatesFromUserLocation(userAddress = [], pincode = '') {
   }
 }
 
+// Get admin coordinates for distance calculation
+export function getCoordinatesFromAdminLocation(address) {
+  const myApiKey = url().apiKey;
+  return new Promise((resolve, reject) => {
+    fetch(
+      `https://maps.google.com/maps/api/geocode/json?key=${myApiKey}&address=${address}&sensor=false`,
+    )
+      .then(response => response.json())
+      .then(responseJson => {
+        if (responseJson.status === 'OK') {
+          const destination = `${responseJson?.results[0]?.geometry?.location?.lat},${responseJson?.results[0]?.geometry?.location?.lng}`;
+          // print(responseJson, 'destination');
+          resolve(destination);
+        } else {
+          reject('not found');
+          return false;
+        }
+      })
+      .catch(error => {
+        reject(error);
+      });
+  });
+}
+
 // Get Current Location
-export const getUserLocation = async () => {
+export const getUserLocation = async (coordinates = '') => {
   try {
     let position = '';
     const result = await requestLocationPermission();
-    print(result, 'result');
-    if (result) {
-      position = await new Promise((resolve, reject) => {
-        Geolocation.getCurrentPosition(
-          position => resolve(position),
-          error => reject(error),
-          {enableHighAccuracy: true, timeout: 15000},
-        );
-      });
+    if (coordinates == '') {
+      if (result) {
+        position = await new Promise((resolve, reject) => {
+          Geolocation.getCurrentPosition(
+            position => resolve(position),
+            error => reject(error),
+            {enableHighAccuracy: true, timeout: 15000},
+          );
+        });
+      }
     }
-    print(position, 'position');
 
-    const latitude = position.coords.latitude;
-    const longitude = position.coords.longitude;
+    const latitude =
+      coordinates != '' ? coordinates.latitude : position.coords.latitude;
+    const longitude =
+      coordinates != '' ? coordinates.longitude : position.coords.longitude;
     const myApiKey = url().apiKey;
 
     const findResult = (results, name) => {
@@ -220,7 +246,6 @@ export const getUserLocation = async () => {
       const resparse = await response.json();
       if (resparse.results && resparse.results.length > 0) {
         const results = resparse.results[0].address_components;
-
         const street = [
           findResult(results, 'route'),
           findResult(results, 'sublocality_level_2'),
@@ -303,4 +328,64 @@ export const AdminDistanceRadius = async (
     console.error('Missing data for distance calculation');
     throw new Error('Missing required data');
   }
+};
+
+// Get coordinates for distance calculation
+export function manualAddressBaseCoordinates(userAddress = '', pincode = '') {
+  if (userAddress !== '') {
+    const myApiKey = url().apiKey;
+    let address = userAddress;
+    // console.log(address, 'address');
+
+    return new Promise((resolve, reject) => {
+      fetch(
+        `https://maps.google.com/maps/api/geocode/json?key=${myApiKey}&address=${encodeURIComponent(
+          address,
+        )}&sensor=false`,
+      )
+        .then(response => response.json())
+        .then(responseJson => {
+          if (responseJson.status === 'OK' && responseJson.results.length > 0) {
+            // print(responseJson, 'responseJson');
+            // Extracting first result's coordinates
+            const location = responseJson.results[0].geometry.location;
+            const destination = {
+              lat: location.lat,
+              lng: location.lng,
+            };
+            resolve(destination);
+          } else {
+            reject('Location not found');
+          }
+        })
+        .catch(error => {
+          reject(error);
+        });
+    });
+  } else {
+    return Promise.reject('Invalid address');
+  }
+}
+
+// Calculate new radius when dragging the marker
+export const onRadiusValid = (e, centerCoordinates, radius) => {
+  const {latitude, longitude} = e?.coordinate;
+  const center = centerCoordinates;
+  // Haversine formula to calculate distance in meters
+  const toRadians = deg => (deg * Math.PI) / 180;
+  const earthRadius = 6371000; // meters
+
+  const dLat = toRadians(latitude - center.latitude);
+  const dLon = toRadians(longitude - center.longitude);
+  const lat1 = toRadians(center.latitude);
+  const lat2 = toRadians(latitude);
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  const distance = earthRadius * c; // Distance in meters
+  // console.log(distance, 'distance');
+  return distance < radius;
 };

@@ -15,7 +15,6 @@ import {InputText} from '../../components/InputField/InputText';
 import PrimaryButton from '../../components/Buttons/PrimaryButton';
 import MemberRegCard from '../../components/Card/MemberRegCard';
 import {useDispatch, useSelector} from 'react-redux';
-import {setTermsPage} from '../../redux/TitleSlice';
 import {setMemberShipData} from '../../redux/SummerySlice';
 import SelectDrop from '../../components/InputField/SelectDrop';
 import {appFont} from '../../utilities/appFont';
@@ -27,6 +26,13 @@ const MemberReg1 = ({navigation, route}) => {
   const dispatch = useDispatch();
 
   const {userType, profileData} = useSelector(state => state.auth);
+  const {userSettings} = useSelector(state => state.setting);
+
+  const userData =
+    userSettings && userSettings?.userInfo != '' && userSettings?.userInfo;
+
+  print(userData, 'userData');
+
   const [memberInfo, setMemberInfo] = useState({
     name: '',
     gender: '',
@@ -37,21 +43,23 @@ const MemberReg1 = ({navigation, route}) => {
 
   // update ProfileDate if UserExist
 
-  const gender = ['female', 'male', 'Transgender'];
+  const gender = ['Female', 'Male', 'Others'];
+
+  // print(profileData, 'profileData');
 
   useEffect(() => {
-    if (userType == 'user' && profileData) {
+    if (userType == 'user' && userData) {
       setMemberInfo({
-        name: profileData.name,
-        gender: profileData.gender,
-        email: profileData.email,
-        number: profileData.number,
+        name: userData.first_name,
+        gender: userData.gender,
+        email: userData.email,
+        number: userData.phone,
       });
     }
     if (route.params.memberShipData) {
       dispatch(setMemberShipData(route.params.memberShipData));
     }
-  }, [profileData]);
+  }, [userData]);
 
   // useEffect(() => {
   //   if (isFocus) {
@@ -64,26 +72,27 @@ const MemberReg1 = ({navigation, route}) => {
   // }, [isFocus]);
 
   // reset the data:
-  useEffect(() => {
-    if (!isFocus) {
-      reset();
-    }
-  }, [isFocus]);
+  // useEffect(() => {
+  //   if (!isFocus) {
+  //     reset();
+  //   }
+  // }, [isFocus]);
 
   // validation:
   const schema = yup
     .object()
     .shape({
-      name: yup.string('must be string').required('Name is required'),
-      gender: yup.string().required('select gender'),
+      name: yup.string('Must be string').required('Name is required'),
+      gender: yup.string().required('Select gender'),
       email: yup
         .string()
         .email('Please Enter a valid Email')
         .required('Email is required'),
       number: yup
-        .string()
-        .required('Mobil Number is required')
-        .min(10, 'invalid Mobile Number'),
+        .number()
+        .typeError('Please Enter a valid Number')
+        .required('Mobile Number is required')
+        .min(10, 'Invalid Mobile Number'),
     })
     .required();
 
@@ -105,7 +114,7 @@ const MemberReg1 = ({navigation, route}) => {
 
   // navigation:
   const onPressSend = data => {
-    reset();
+    // reset();
     dispatch(setMemberShipData(data));
     isValid && navigation.navigate('member_2');
   };

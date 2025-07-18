@@ -2,28 +2,22 @@ import React from 'react';
 import {View, Text} from 'react-native';
 import appColors from '../../utilities/appColors';
 import {appFont} from '../../utilities/appFont';
-import {
-  currencyConvertor,
-  fontScalling,
-  print,
-} from '../../utilities/helperFunction';
+import {currencyConvertor, fontScalling} from '../../utilities/helperFunction';
 import {useSelector} from 'react-redux';
 import * as Animatable from 'react-native-animatable';
 
+// Android FIles
+
 const OrderPriceContainer = ({
   data,
-  refer,
   km,
   orders = false,
   pinkColor = false,
-  nutrition = false,
   isPersent = false,
   feePerMeal = false,
 }) => {
   const {userSettings} = useSelector(state => state.setting);
   const appColor = appColors();
-
-  // print(data, 'data');
 
   return (
     <View>
@@ -35,8 +29,6 @@ const OrderPriceContainer = ({
           paddingHorizontal: 10,
         }}>
         <Animatable.Text
-          // animation={'slideInLeft'}
-          // duration={800}
           style={{
             fontFamily: appFont.rB,
             fontSize: fontScalling(2),
@@ -99,7 +91,9 @@ const OrderPriceContainer = ({
                   {!isPersent &&
                     `(${
                       data?.discount?.percent && data.discount.percent != ''
-                        ? data.discount.percent
+                        ? Number(data.discount.percent).toFixed(
+                            Number(data.discount.percent) % 1 == 0 ? 0 : 2,
+                          )
                         : ''
                     }%)`}
                 </Text>
@@ -142,6 +136,9 @@ const OrderPriceContainer = ({
                       ? data.disCount.percent
                       : ''
                   }%)`}
+                {data?.discount_percent &&
+                  data?.discount_percent != '' &&
+                  `(${data?.discount_percent} %)`}
               </Text>
 
               <Text
@@ -181,7 +178,7 @@ const OrderPriceContainer = ({
                 fontSize: fontScalling(2),
                 color: appColor.gold,
               }}>
-              -{' '}
+              -
               {data.amount_reduced
                 ? currencyConvertor(data.amount_reduced, 2)
                 : currencyConvertor(0.0)}
@@ -212,7 +209,7 @@ const OrderPriceContainer = ({
                 fontSize: fontScalling(2),
                 color: appColor.black,
               }}>
-              {' + '}
+              +{' '}
               {data.cgst
                 ? currencyConvertor(Number(data.cgst), 2)
                 : currencyConvertor(0.0)}
@@ -242,7 +239,7 @@ const OrderPriceContainer = ({
               fontSize: fontScalling(2),
               color: appColor.black,
             }}>
-            {' + '}
+            +{' '}
             {data.sgst
               ? currencyConvertor(Number(data.sgst), 2)
               : currencyConvertor(0.0)}
@@ -305,7 +302,6 @@ const OrderPriceContainer = ({
                 fontSize: fontScalling(2),
                 color: appColor.gold,
               }}>
-              {' '}
               <Text
                 style={{
                   fontFamily: appFont.bB,
@@ -313,8 +309,9 @@ const OrderPriceContainer = ({
                   color: appColor.bgBlack,
                 }}>
                 {feePerMeal &&
-                  currencyConvertor(Number(data.delfee) / data.sectionCount) +
-                    '/Meal'}
+                  currencyConvertor(
+                    Number(data.delfee) / Number(data.dishCount),
+                  ) + '/Meal '}
               </Text>
               {data.delfee
                 ? feePerMeal
@@ -337,13 +334,13 @@ const OrderPriceContainer = ({
               fontSize: fontScalling(2),
               color: appColor.black,
             }}>
-            Total :
+            Total
           </Text>
           <Text
             style={{
               fontFamily: appFont.bB,
               fontSize: fontScalling(2),
-              color: appColor.ratingGold,
+              color: appColor.gold,
               fontSize: 20,
             }}>
             {' '}

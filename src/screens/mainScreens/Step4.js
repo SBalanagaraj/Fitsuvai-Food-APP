@@ -20,6 +20,7 @@ import {
   setFinalCustomizeFood,
   setNutrients,
   setOnlyCustomPlan,
+  setPlanDays,
   setStoreCustomizeFood,
   setSummeryContent,
 } from '../../redux/SummerySlice';
@@ -27,25 +28,24 @@ import {useIsFocused, useNavigation} from '@react-navigation/native';
 import {url} from '../../utilities/appApi';
 import UserPlanPrice from '../../Hooks/UserPlanPrice';
 import {SvgUri} from 'react-native-svg'; //@@
+import FastImage from 'react-native-fast-image';
 
 const Step4 = ({handlePage}) => {
   const [activeCard, setActiveCard] = useState('');
   const [load, setLoad] = useState(false);
   const [refresh, setRefresh] = useState(false);
+  const [cardData, setcardData] = useState([]);
+  const [foodTime, setFoodTime] = useState(['breakfast', 'lunch', 'dinner']);
   const [selectedIndices, setSelectedIndices] = useState([
     'breakfast',
     'lunch',
     'dinner',
   ]);
-  const [cardData, setcardData] = useState([]);
-  const [foodTime, setFoodTime] = useState(['breakfast', 'lunch', 'dinner']);
 
   const {assesMentIds, summeryContent, planAmmount} = useSelector(
     state => state.summary,
   );
-
   const {PlanPriceInfo} = UserPlanPrice();
-
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const isFocus = useIsFocused();
@@ -150,10 +150,9 @@ const Step4 = ({handlePage}) => {
           style={{
             overflow: 'hidden',
             borderRadius: 10,
-            marginTop: 10,
           }}>
           <FlatList
-            data={cardData}
+            data={cardData.filter(data => data?.totalAmount != 0)}
             showsHorizontalScrollIndicator={false}
             ItemSeparatorComponent={() => {
               return (
@@ -161,6 +160,7 @@ const Step4 = ({handlePage}) => {
                   style={{
                     marginBottom: 15,
                     paddingRight: widthResponse ? 10 : 20, //@@
+                    marginTop: 10,
                   }}
                 />
               );
@@ -170,6 +170,8 @@ const Step4 = ({handlePage}) => {
               return (
                 <Pressable
                   onPress={() => {
+                    dispatch(setFinalCustomizeFood([]));
+                    dispatch(setPlanDays(item.days));
                     PlanPriceInfo(
                       item.totalAmount.toFixed(0),
                       {
@@ -224,6 +226,7 @@ const Step4 = ({handlePage}) => {
                     paddingVertical: widthResponse ? 10 : 20, //@@
                     paddingHorizontal: widthResponse ? 10 : 15, //@@
                     borderRadius: 15,
+                    marginBottom: 20,
                     backgroundColor: active ? appColor.gold : appColor.cartBg,
                     marginLeft: index == 0 ? 0 : 10,
                     marginRight: cardData.length - 1 == index ? 20 : 0,
@@ -269,7 +272,8 @@ const Step4 = ({handlePage}) => {
                     }}>
                     {item.membership}
                   </Text>
-                  {item.menu_card && (
+                  {print(item.menu_card, 'item.menu_card')}
+                  {item.menu_card != '' && (
                     <Pressable
                       style={{
                         position: 'absolute',
@@ -281,14 +285,15 @@ const Step4 = ({handlePage}) => {
                           menuPdf: item.menu_card,
                         });
                       }}>
-                      <Image
+                      <FastImage
                         resizeMode="cover"
                         style={{
-                          width: widthResponse ? 25 : 55, //@@
-                          height: widthResponse ? 25 : 55, //@@
-                          borderRadius: 200, //@@
+                          width: widthResponse ? 28 : 55, //@@
+                          height: widthResponse ? 28 : 55, //@@
+                          borderRadius: 30, //@@
                         }}
                         source={{
+                          priority: 'high',
                           uri: 'https://fitsuvai.bugtreat.org/assets/user/images/gif/menu_2.gif',
                         }}
                       />
@@ -462,7 +467,7 @@ const Step4 = ({handlePage}) => {
           padding: widthResponse ? 20 : 30, //@@
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginTop: cardData && cardData.length > 0 ? 40 : 5,
+          // marginTop: cardData && cardData.length > 0 ? 40 : 5,
           marginRight: 20,
           flexDirection: 'row',
         }}>
@@ -487,7 +492,7 @@ const Step4 = ({handlePage}) => {
         <PrimaryButton
           onPress={() => {
             PlanPriceInfo(
-              0,
+              planAmmount?.subTotal,
               {
                 code: null,
                 percent: null,

@@ -57,7 +57,6 @@ const RewardCoin = ({navigation}) => {
       if (userSettings?.userInfo?.user_id) {
         formData.append('userId', userSettings?.userInfo?.user_id);
       }
-      print(formData, 'formdata');
       var requestOptions = {
         method: 'POST',
         body: formData,

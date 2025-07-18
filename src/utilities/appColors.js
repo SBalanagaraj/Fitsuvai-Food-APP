@@ -66,6 +66,9 @@ export default appColors = () => {
         lightBlackBack: '#393939',
         toggleGreen: '#17A772',
         lightYellow: 'rgba(	244,	160,	69, 0.3);',
+        transparentGray: 'rgba(255, 255, 255, 0.2)',
+        backgroundPink: '#c0dee3',
+        lightBackground: '#00000099',
       }
     : {
         // Dark Theme:

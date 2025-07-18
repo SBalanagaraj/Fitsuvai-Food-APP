@@ -10,24 +10,25 @@ import {
 } from '../../redux/CartSlice';
 import {Icon} from '../../utilities/icon';
 import appColors from '../../utilities/appColors';
-import {fontScalling} from '../../utilities/helperFunction';
+import {fontScalling, scrnWidth} from '../../utilities/helperFunction';
 import {appFont} from '../../utilities/appFont';
 import useCartPriceInfo from '../../Hooks/useCartPriceInfo';
 import PrimaryButton from './PrimaryButton';
 import {useNavigation} from '@react-navigation/native';
+import * as Animatable from 'react-native-animatable';
 
 const AddToCartBtn = ({data, detail = false, cartBtn = false}) => {
-  const dispatch = useDispatch();
-  const {cart, total, coinHub} = useSelector(state => state.cart);
-  const navigation = useNavigation();
-
-  const appColor = appColors();
-  const {styles} = useStyles();
-
   const [focus, setFocus] = useState(false);
   const [focusMinus, setFocusMins] = useState(false);
 
+  const {cart, total} = useSelector(state => state.cart);
   const {calculatePriceInfo} = useCartPriceInfo();
+  const navigation = useNavigation();
+  const dispatch = useDispatch();
+  const appColor = appColors();
+  const {styles} = useStyles();
+
+  const cartPresent = cart?.length > 0 && cart.find(item => item.id == data.id);
 
   useEffect(() => {
     calculatePriceInfo(
@@ -44,8 +45,6 @@ const AddToCartBtn = ({data, detail = false, cartBtn = false}) => {
     );
   }, [total.subTotal, cart]);
 
-  const cartPresent = cart?.length > 0 && cart.find(item => item.id == data.id);
-
   let count =
     cart?.length > 0
       ? cart
@@ -60,74 +59,69 @@ const AddToCartBtn = ({data, detail = false, cartBtn = false}) => {
     count &&
     Number(count) >= 1;
 
+  const commonToggleStl = {
+    paddingVertical: detail ? 7 : 3,
+    paddingHorizontal: detail ? 7 : 3,
+    borderRadius: cartBtn || detail ? 15 : 5,
+    backgroundColor:
+      cartBtn || detail
+        ? focusMinus
+          ? appColor.Textlightblack
+          : appColor.cardbg
+        : appColor.Textlightblack,
+    elevation: 0.3,
+    overflow: 'hidden',
+  };
+
+  const iconColor =
+    cartBtn || detail
+      ? focusMinus
+        ? appColor.white
+        : appColor.Textlightblack
+      : appColor.white;
+
+  const iconSize = detail ? 20 : 18;
+
   return btnValidator ? (
-    <View style={{flexDirection: 'row', alignItems: 'center'}}>
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: detail ? 'space-evenly' : 'space-between',
+      }}>
       <Pressable
         style={[
           styles.increMentBtn,
           {
-            flex: detail ? 1 : 0,
             marginRight: detail ? 25 : 0,
             borderRadius: detail ? 20 : 5,
             shadowOpacity: 0.5,
+            width: detail ? scrnWidth / 2.8 : null,
           },
         ]}>
         <>
           {count && Number(count) == 1 ? (
-            <Pressable
-              style={[
-                styles.plusMinus,
-                {
-                  paddingVertical: detail ? 10 : 7,
-                  paddingHorizontal: detail ? 10 : 6,
-                  borderRadius: cartBtn || detail ? 15 : 5,
-                  backgroundColor:
-                    cartBtn || detail
-                      ? focusMinus
-                        ? appColor.black
-                        : appColor.cardbg
-                      : appColor.bgBlack,
-                  elevation: 1,
-                  overflow: 'hidden',
-                },
-              ]}
-              onPressIn={() => setFocusMins(true)}
-              onPressOut={() => setFocusMins(false)}
-              onPress={() => {
-                cartBtn
-                  ? dispatch(setDeleteModal({isModal: true, item: data}))
-                  : dispatch(removeFromCart(data));
-              }}>
-              <Icon
-                ComponentName={'Feather'}
-                name={'trash-2'}
-                size={detail ? 24 : 18}
-                color={
-                  cartBtn || detail
-                    ? focusMinus
-                      ? appColor.white
-                      : appColor.bgBlack
-                    : appColor.white
-                }
-              />
-            </Pressable>
+            <Animatable.View>
+              <Pressable
+                style={[styles.plusMinus, commonToggleStl]}
+                onPressIn={() => setFocusMins(true)}
+                onPressOut={() => setFocusMins(false)}
+                onPress={() => {
+                  cartBtn
+                    ? dispatch(setDeleteModal({isModal: true, item: data}))
+                    : dispatch(removeFromCart(data));
+                }}>
+                <Icon
+                  ComponentName={'Feather'}
+                  name={'trash-2'}
+                  size={iconSize}
+                  color={iconColor}
+                />
+              </Pressable>
+            </Animatable.View>
           ) : (
             <Pressable
-              style={[
-                styles.plusMinus,
-                {
-                  paddingVertical: detail ? 10 : 7,
-                  paddingHorizontal: detail ? 10 : 6,
-                  borderRadius: cartBtn || detail ? 15 : 5,
-                  backgroundColor:
-                    cartBtn || detail
-                      ? focusMinus
-                        ? appColor.black
-                        : appColor.cardbg
-                      : appColor.bgBlack,
-                  elevation: 1,
-                },
-              ]}
+              style={[styles.plusMinus, commonToggleStl]}
               onPressIn={() => setFocusMins(true)}
               onPressOut={() => setFocusMins(false)}
               onPress={() => {
@@ -136,14 +130,8 @@ const AddToCartBtn = ({data, detail = false, cartBtn = false}) => {
               <Icon
                 ComponentName={'Entypo'}
                 name={'minus'}
-                size={detail ? 24 : 18}
-                color={
-                  cartBtn || detail
-                    ? focusMinus
-                      ? appColor.white
-                      : appColor.bgBlack
-                    : appColor.white
-                }
+                size={iconSize}
+                color={iconColor}
               />
             </Pressable>
           )}
@@ -152,8 +140,8 @@ const AddToCartBtn = ({data, detail = false, cartBtn = false}) => {
           style={[
             styles.textColor,
             {
-              paddingHorizontal: 15,
-              color: appColor.black,
+              paddingHorizontal: 8,
+              color: detail ? appColor.Textlightblack : appColor.black,
               fontFamily: appFont.bB,
               fontSize: detail ? fontScalling(3) : fontScalling(1.8),
             },
@@ -163,43 +151,30 @@ const AddToCartBtn = ({data, detail = false, cartBtn = false}) => {
         <Pressable
           onPressIn={() => setFocus(true)}
           onPressOut={() => setFocus(false)}
-          style={[
-            styles.plusMinus,
-            {
-              paddingVertical: detail ? 10 : 7,
-              paddingHorizontal: detail ? 10 : 6,
-              borderRadius: cartBtn || detail ? 15 : 5,
-              backgroundColor:
-                cartBtn || detail
-                  ? focus
-                    ? appColor.black
-                    : appColor.cardbg
-                  : appColor.bgBlack,
-            },
-          ]}
+          style={[styles.plusMinus, commonToggleStl]}
           onPress={() => {
             dispatch(incrementQuantity(data));
           }}>
           <Icon
             ComponentName={'Entypo'}
             name={'plus'}
-            size={detail ? 24 : 18}
-            color={
-              cartBtn || detail
-                ? focus
-                  ? appColor.white
-                  : appColor.bgBlack
-                : appColor.white
-            }
+            size={iconSize}
+            color={iconColor}
           />
         </Pressable>
       </Pressable>
       {detail && (
-        <PrimaryButton
-          onPress={() => navigation.navigate('Carts', {screen: 'cart'})}
-          Title={'Go To Cart'}
-          parentStyle={{flex: 1}}
-        />
+        <View style={{width: detail ? scrnWidth / 2.8 : null}}>
+          <PrimaryButton
+            onPress={() => navigation.navigate('Carts', {screen: 'cart'})}
+            Title={'Go To Cart'}
+            parentStyle={{flex: 1}}
+            textStyle={{
+              fontSize: fontScalling(1.8),
+              paddingVertical: 0,
+            }}
+          />
+        </View>
       )}
     </View>
   ) : (
@@ -212,8 +187,8 @@ const AddToCartBtn = ({data, detail = false, cartBtn = false}) => {
         {
           flex: detail ? 1 : null,
           borderRadius: detail ? 20 : 5,
-          paddingHorizontal: detail ? 0 : 20,
-          paddingVertical: detail ? 12.5 : 10,
+          paddingHorizontal: detail ? 0 : 8,
+          paddingVertical: detail ? 12.5 : 7.5,
           flexDirection: detail ? 'row' : null,
           // marginRight: detail ? 10 : 0,
         },
@@ -230,7 +205,7 @@ const AddToCartBtn = ({data, detail = false, cartBtn = false}) => {
         style={[
           styles.textColor,
           {
-            fontSize: detail ? fontScalling(2.5) : fontScalling(1.6),
+            fontSize: detail ? fontScalling(2.5) : fontScalling(1.4),
             paddingLeft: detail ? 15 : 0,
           },
         ]}>
@@ -246,7 +221,7 @@ const useStyles = () => {
   const appColor = appColors();
   const styles = StyleSheet.create({
     addButton: {
-      backgroundColor: appColor.inputBackDark,
+      backgroundColor: appColor.Textlightblack,
       alignItems: 'center',
       justifyContent: 'center',
       elevation: 0.7,

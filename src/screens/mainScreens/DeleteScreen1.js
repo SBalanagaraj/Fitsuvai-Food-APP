@@ -19,7 +19,7 @@ export default function DeleteScreen1({navigation}) {
   const {userSettings} = useSelector(state => state.setting);
 
   return (
-    <MainCard>
+    <MainCard altStyle={{backgroundColor:appColor.cartBg,marginHorizontal:0}}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{paddingBottom: widthResponse ? 90 : 140}}>

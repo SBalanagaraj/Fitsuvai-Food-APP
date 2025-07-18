@@ -22,6 +22,8 @@ const CourseDetail = ({navigation, route}) => {
   const {styles} = useStyle();
   const showToast = useShowToast();
 
+  print(courseDetail, 'courseDetail');
+
   // download pdf:
   const downloadFile = url => {
     const fileName = `download.pdf`;
@@ -76,14 +78,16 @@ const CourseDetail = ({navigation, route}) => {
             <HtmlView url={courseDetail.description} padding={40} />
           )}
           {/* primary button */}
-          <PrimaryButton
-            onPress={() => {
-              downloadFile(courseDetail.pdf);
-            }}
-            download
-            altStyle={{paddingVertical: widthResponse ? 10 : 20}}
-            Title={'download pdf'}
-          />
+          {courseDetail.pdf != '' && (
+            <PrimaryButton
+              onPress={() => {
+                downloadFile(courseDetail.pdf);
+              }}
+              download
+              altStyle={{paddingVertical: widthResponse ? 10 : 20}}
+              Title={'download pdf'}
+            />
+          )}
         </ScrollView>
       </View>
     </MainCard>

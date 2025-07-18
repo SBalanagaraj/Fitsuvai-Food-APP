@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "254995024595",
+    "project_id": "fitsuvai-49f53",
+    "storage_bucket": "fitsuvai-49f53.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:254995024595:android:8a5ed240f82b2a37bfe226",
+        "android_client_info": {
+          "package_name": "com.fitsuvai"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "254995024595-jlvbu5e6urp5ofs9m24hhubgeiail06r.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.fitsuvai",
+            "certificate_hash": "b32d7151bb31e0e0163bc4b8af52738b6e762de2"
+          }
+        },
+        {
+          "client_id": "254995024595-mi5pijv1hngm1ibcp2l8uvkrrne7rr6b.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBX1p5MSLwZeVSgkrrcDP89IwqDZwtJX9o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "254995024595-3mdgojuq06iamrshhfbai95m93pftev2.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "254995024595-nrj3arc136gsr84usjbj36t7k48qu89g.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.fitsuvai",
+                "app_store_id": "6648788532"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

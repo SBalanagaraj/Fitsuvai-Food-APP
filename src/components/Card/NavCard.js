@@ -1,12 +1,20 @@
 import React, {useState} from 'react';
-import {View, Pressable, Text, StyleSheet} from 'react-native';
+import {View, Pressable, Text, StyleSheet, Image} from 'react-native';
 import MaterialCommunityIcon from 'react-native-vector-icons/MaterialCommunityIcons';
 import appColors from '../../utilities/appColors';
 import {appFont} from '../../utilities/appFont';
 import {Icon} from '../../utilities/icon';
 import {fontScalling} from '../../utilities/helperFunction';
 
-const NavCard = ({icon, title, onpress, iconName, cardbg, deletePage}) => {
+const NavCard = ({
+  icon,
+  title,
+  onpress,
+  iconName,
+  cardbg,
+  deletePage,
+  proCard,
+}) => {
   const appColor = appColors();
   const {styles} = useStyle();
   const [active, setActive] = useState(false);
@@ -15,8 +23,10 @@ const NavCard = ({icon, title, onpress, iconName, cardbg, deletePage}) => {
       style={[
         styles.card,
         {
-          backgroundColor: cardbg
-            ? active
+          paddingHorizontal: 10,
+          elevation: 1,
+          backgroundColor: appColor.white
+            ? !active
               ? appColor.white
               : appColor.cardbg
             : appColor.white,
@@ -47,23 +57,23 @@ const NavCard = ({icon, title, onpress, iconName, cardbg, deletePage}) => {
         <Icon
           ComponentName={icon}
           name={iconName}
-          color={active ? appColor.themeYellow : appColor.black}
-          size={25}
+          color={!active ? appColor.gold : appColor.black}
+          size={20}
         />
         <Text
           style={[
             styles.title,
             {
-              color: active ? appColor.themeYellow : appColor.black,
-              fontFamily: deletePage ? appFont.rM : appFont.bB, //@@
+              color: active ? appColor.themeYellow : appColor.Textlightblack,
+              fontFamily: deletePage ? appFont.rM : appFont.bR, //@@
             },
           ]}>
           {title}
         </Text>
         <MaterialCommunityIcon
           name="chevron-right"
-          size={25}
-          color={active ? appColor.themeYellow : appColor.black}
+          size={30}
+          color={active ? appColor.themeYellow : appColor.lightGreyLine}
         />
       </View>
     </Pressable>
@@ -81,7 +91,7 @@ const useStyle = () => {
     },
     title: {
       fontFamily: appFont.rM,
-      fontSize: fontScalling(2.1),
+      fontSize: fontScalling(1.8),
       flex: 1,
       paddingLeft: 10,
     },

@@ -2,7 +2,6 @@ import {
   View,
   Text,
   StyleSheet,
-  RefreshControl,
   Image,
   FlatList,
   Animated,
@@ -14,32 +13,37 @@ import {
   fontScalling,
   scrnWidth,
   currencyConvertor,
-  print,
   objectLength,
   arrayLength,
   destructureDate,
-  destructureDateSlace,
   convertTo24HourFormat,
+  print,
 } from '../../utilities/helperFunction';
-import {Icon} from '../../utilities/icon';
 import {appFont} from '../../utilities/appFont';
 import appColors from '../../utilities/appColors';
-import * as Animatable from 'react-native-animatable';
 import PrimaryButton from '../../components/Buttons/PrimaryButton';
-// import MainOverflowCard from '../../components/Card/MainOverflowCard';
 import {url} from '../../utilities/appApi';
 import {OrderdetailShimmer} from '../../utilities/appShimmer';
 import MainOverflowCard from '../../components/Card/MainOverFlowCard';
 import messaging from '@react-native-firebase/messaging';
 import {useDispatch} from 'react-redux';
 import {userSettingApi} from '../../redux/SettingSlice';
-import moment from 'moment';
 import {useShowToast} from '../../components/Toast/ToastAlert';
 import Modal from 'react-native-modal';
 import LottieView from 'lottie-react-native';
+import {OrderTracking} from '../../components/Card/orderTracking';
+import {useIsFocused} from '@react-navigation/native';
+import FastImage from 'react-native-fast-image';
 
 const OrderTrack = ({route, navigation}) => {
-  const {order_id, order_created, delivery_date, cancelled} = route.params;
+  const {
+    order_id,
+    order_created,
+    cancelled,
+    delivery_date,
+    expect_delivery_time,
+  } = route.params;
+  ``;
   const appColor = appColors();
   const {styles} = useStyle();
   const showToast = useShowToast();
@@ -48,22 +52,44 @@ const OrderTrack = ({route, navigation}) => {
   const [details, setDetails] = useState({});
   const [trackStatus, setTrackStatus] = useState(0);
   const [cancel, setCancel] = useState(false);
-  const animationDuration = 600;
   const [cancelModal, setCancelModal] = useState(false);
   const cancelAnimRef = useRef(null);
+  const isFocus = useIsFocused();
 
-  console.log(order_id, 'cancel');
   const dispatch = useDispatch();
 
-  // console.log(
-  //   new Date('2024-12-05 18:47:03').getTime(),
-  //   'format',
-  //   new Date().getTime(),
-  // );
+  const [deliveryTime, setDeliveryTime] = useState({
+    day: '01',
+    hr: '00',
+    min: '00',
+    sec: '00',
+  });
+
+  const today = new Date()
+    .toISOString()
+    .split('T')[0]
+    .split('-')
+    .reverse()
+    .join('-');
+
+  const deliveryTimeValid =
+    deliveryTime.day != 0 ||
+    deliveryTime.hr != 0 ||
+    deliveryTime.min != 0 ||
+    deliveryTime.sec != 0;
+
+  const timerValid =
+    deliveryTime &&
+    cancelled == '0' &&
+    trackStatus != 5 &&
+    delivery_date >= today &&
+    deliveryTimeValid;
 
   useEffect(() => {
     const deliveryDate =
-      delivery_date?.length != 0 ? destructureDate(delivery_date, '-') : '';
+      delivery_date.trim()?.length != 0
+        ? destructureDate(delivery_date, '-')
+        : '';
     if (
       deliveryDate?.length != 0 &&
       new Date(deliveryDate).getTime() > new Date().getTime() &&
@@ -93,8 +119,7 @@ const OrderTrack = ({route, navigation}) => {
         );
         const currentMs = currentObj.getTime();
         setCancel(true);
-        console.log(created1minMs, 'clg', currentMs);
-        // order created ms and current ms validate:
+
         if (created1minMs < currentMs) {
           setCancel(false);
           clearInterval(timer);
@@ -186,143 +211,65 @@ const OrderTrack = ({route, navigation}) => {
     refresh && apiCall();
   }, [refresh]);
 
-  const OrderTracking = ({data, i, length}) => {
-    const [lineHeight, setLineHeight] = useState(0); //@@
-    // text animation:
-    const colorValue = useRef(new Animated.Value(0)).current;
-    const nameAnimation = colorValue.interpolate({
-      inputRange: [0, 1],
-      outputRange: [appColor.lightGreyLine, appColor.textBlack], // From black to red
-    });
-    const descriptionAnimation = colorValue.interpolate({
-      inputRange: [0, 1],
-      outputRange: [appColor.lightGreyLine, appColor.Textlightblack], // From black to red
-    });
-    useEffect(() => {
-      const startColorAnimation = () => {
-        Animated.timing(colorValue, {
-          toValue: 0,
-          duration: 0,
-          useNativeDriver: false,
-        }).start(() => {
-          if (trackStatus > i) {
-            Animated.timing(colorValue, {
-              toValue: 1,
-              delay: i * animationDuration,
-              duration: animationDuration,
-              useNativeDriver: false,
-            }).start();
-          }
-        });
-      };
-      startColorAnimation();
-    }, []);
-    const slideDown = {
-      //@@
-      from: {
-        transform: [{translateY: -lineHeight}],
-      },
-      to: {
-        transform: [{translateY: 0}],
-      },
-    };
+  const calculateTimeDifference = (date, time) => {
+    // Convert the date to YYYY-MM-DD format
+    const formattedDate = date.split('-').reverse().join('-');
 
-    return (
-      <View style={[styles.dotOut, {minHeight: 60}]}>
-        <View style={styles.dotIn}>
-          {/* dots */}
-          <View
-            style={[
-              styles.dot,
-              {backgroundColor: appColor.greyBg, overflow: 'hidden'},
-            ]}>
-            <Animatable.View
-              duration={animationDuration}
-              delay={i * animationDuration}
-              animation={'fadeIn'}
-              style={{
-                width: '100%',
-                height: '100%',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor:
-                  trackStatus > i ? appColor.themeYellow : appColor.greyBg,
-              }}>
-              <Icon
-                ComponentName={cancelled == '1' ? 'AntDesign' : 'FontAwesome'}
-                name={cancelled == '1' ? 'close' : 'check'}
-                size={widthResponse ? 18 : 23}
-                color={appColor.bgWhite}
-              />
-            </Animatable.View>
-          </View>
-          {/* line */}
-          {i != length - 1 && (
-            <View
-              style={{marginBottom: 10, height: '100%', flex: 1}}
-              onLayout={({nativeEvent}) => {
-                setLineHeight(nativeEvent.layout.height);
-              }}>
-              <View
-                style={[
-                  styles.line,
-                  {
-                    overflow: 'hidden',
-                    backgroundColor: appColor.greyBg,
-                  },
-                ]}>
-                <Animatable.View
-                  duration={animationDuration}
-                  delay={i * animationDuration}
-                  // easing={'ease-in-out'}
-                  animation={slideDown} //@@
-                  style={[
-                    {
-                      width: '100%',
-                      height: '100%',
-                      backgroundColor:
-                        trackStatus > i + 1
-                          ? appColor.themeYellow
-                          : appColor.greyBg,
-                    },
-                  ]}
-                />
-              </View>
-            </View>
-          )}
-        </View>
-        {/* contents */}
-        <Pressable style={[styles.dotContent]}>
-          {data.status && data.status != '' && (
-            <Animated.Text
-              style={[
-                styles.roboto_light,
-                {
-                  textTransform: 'capitalize',
-                  fontFamily: appFont.rM,
-                  fontSize: fontScalling(1.8),
-                  color: nameAnimation,
-                  marginBottom: widthResponse ? 4 : 7,
-                },
-              ]}>
-              {data.status}
-            </Animated.Text>
-          )}
-          {data.date && data.date != null && data.date != '' && (
-            <Animated.Text
-              style={[
-                styles.roboto_light,
-                {
-                  color: descriptionAnimation,
-                },
-              ]}>
-              {data.date}
-            </Animated.Text>
-          )}
-        </Pressable>
-      </View>
-    );
+    // Convert time to 24-hour format if needed
+    const timeParts = time.match(/(\d+):(\d+) (\w+)/);
+    let hours = parseInt(timeParts[1], 10);
+    const minutes = timeParts[2];
+    const period = timeParts[3];
+
+    if (period.toLowerCase() === 'pm' && hours !== 12) {
+      hours += 12;
+    } else if (period.toLowerCase() === 'am' && hours === 12) {
+      hours = 0;
+    }
+
+    const formattedTime = `${String(hours).padStart(2, '0')}:${minutes}:00`;
+
+    const dateTimeString = `${formattedDate}T${formattedTime}`;
+    // console.log(dateTimeString, 'dateTimeString');
+
+    const endDate = new Date(dateTimeString);
+    const startDate = new Date();
+    const differenceInMs = endDate - startDate;
+
+    // Convert the difference to hours, minutes, and seconds
+    const hr = Math.floor(differenceInMs / (1000 * 60 * 60));
+    const day = Math.floor(hr / 24);
+    const remainderHrs = hr % 12;
+    const min = Math.floor((differenceInMs % (1000 * 60 * 60)) / (1000 * 60));
+    const sec = Math.floor((differenceInMs % (1000 * 60)) / 1000);
+
+    console.log(day, 'day');
+
+    if (differenceInMs < 0) {
+      return setDeliveryTime({day: 0, hr: 0, min: 0, sec: 0}); // or return null;
+    }
+
+    setDeliveryTime({
+      ...deliveryTime,
+      day,
+      hr: day == 0 ? hr : remainderHrs,
+      min,
+      sec,
+    });
+    return {hr, min, sec};
   };
+
+  useEffect(() => {
+    if (timerValid) {
+      const interval = setInterval(() => {
+        calculateTimeDifference(delivery_date, expect_delivery_time);
+      }, 1000);
+      if (!isFocus) {
+        return clearInterval(interval);
+      }
+    }
+  }, []);
+
   return (
     <MainOverflowCard
       onRefresh={onRefresh}
@@ -348,7 +295,7 @@ const OrderTrack = ({route, navigation}) => {
                     style={[
                       styles.baby_blk,
                       {
-                        marginBottom: 10,
+                        marginBottom: 5,
                         fontSize: fontScalling(2.9),
                         color: appColor.themeYellow,
                       },
@@ -366,7 +313,12 @@ const OrderTrack = ({route, navigation}) => {
                     <Text
                       style={[
                         styles.roboto_light,
-                        {fontSize: fontScalling(1.8)},
+                        {
+                          fontSize: fontScalling(1.8),
+                          paddingBottom: 5,
+                          marginRight: 5,
+                          flex: 1,
+                        },
                       ]}>
                       Delivery date :
                       <Text style={{fontFamily: appFont.rM}}>
@@ -375,7 +327,68 @@ const OrderTrack = ({route, navigation}) => {
                       </Text>
                     </Text>
                   )}
+
+                {timerValid && (
+                  <>
+                    <View
+                      style={{
+                        paddingHorizontal: 10,
+                        paddingVertical: 2.5,
+                        backgroundColor: appColor.gold,
+                        borderRadius: 5,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: -12.5,
+                        zIndex: 10,
+                      }}>
+                      <Text
+                        style={[
+                          styles.roboto_light,
+                          {fontSize: fontScalling(1.8), color: appColor.white},
+                        ]}>
+                        Delivered in
+                      </Text>
+                    </View>
+                    <View
+                      style={{
+                        borderWidth: 1,
+                        borderColor: appColor.gold,
+                        paddingBottom: 5,
+                        paddingHorizontal: 10,
+                        paddingTop: 15,
+                        borderRadius: 10,
+                      }}>
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                        }}>
+                        <View style={{alignItems: 'center'}}>
+                          <Text style={styles.keyText}>{deliveryTime.day}</Text>
+                          <Text style={styles.valueText}>Day</Text>
+                        </View>
+                        <Text style={styles.colonStyle}>:</Text>
+                        <View style={{alignItems: 'center'}}>
+                          <Text style={styles.keyText}>{deliveryTime.hr}</Text>
+                          <Text style={styles.valueText}>Hr</Text>
+                        </View>
+                        <Text style={styles.colonStyle}>:</Text>
+                        <View style={{alignItems: 'center'}}>
+                          <Text style={styles.keyText}>{deliveryTime.min}</Text>
+                          <Text style={styles.valueText}>Min</Text>
+                        </View>
+                        <Text style={styles.colonStyle}>:</Text>
+                        <View style={{alignItems: 'center'}}>
+                          <Text style={styles.keyText}>{deliveryTime.sec}</Text>
+                          <Text style={styles.valueText}>Sec</Text>
+                        </View>
+                      </View>
+                    </View>
+                  </>
+                )}
               </View>
+
               {/* products */}
               <View
                 style={{
@@ -420,7 +433,7 @@ const OrderTrack = ({route, navigation}) => {
                               }}>
                               {item.product_image &&
                                 item.product_image != '' && (
-                                  <Image
+                                  <FastImage
                                     style={{
                                       width: '70%',
                                       height: '70%',
@@ -483,6 +496,8 @@ const OrderTrack = ({route, navigation}) => {
                       i={i}
                       key={i}
                       length={details.status_history.length}
+                      trackStatus={trackStatus}
+                      cancelled={cancelled}
                     />
                   );
                 })}
@@ -694,6 +709,22 @@ const useStyle = () => {
       fontFamily: appFont.rR,
       fontSize: fontScalling(1.7),
       color: appColor.textBlack,
+    },
+    keyText: {
+      fontFamily: appFont.bB,
+      fontSize: fontScalling(2.8),
+      color: appColor.boldBlacktext,
+    },
+    valueText: {
+      color: appColor.textGrey,
+      fontFamily: appFont.bR,
+      fontSize: fontScalling(1.5),
+    },
+    colonStyle: {
+      color: appColor.gold,
+      fontFamily: appFont.bB,
+      fontSize: fontScalling(2),
+      marginHorizontal:10
     },
   });
 

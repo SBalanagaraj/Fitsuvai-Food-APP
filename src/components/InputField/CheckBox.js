@@ -2,10 +2,11 @@ import {View, Text, Pressable, TouchableOpacity, Linking} from 'react-native';
 import React from 'react';
 import {Icon} from '../../utilities/icon';
 import appColors from '../../utilities/appColors';
-import {fontScalling} from '../../utilities/helperFunction';
+import {fontScalling, print} from '../../utilities/helperFunction';
 import {appFont} from '../../utilities/appFont';
 import {useNavigation} from '@react-navigation/native';
-import {useSelector} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
+import {setTitle} from '../../redux/TitleSlice';
 
 const CheckBox = ({
   checkBox,
@@ -19,6 +20,7 @@ const CheckBox = ({
   const appColor = appColors();
   const navigation = useNavigation();
   const {userSettings} = useSelector(state => state.setting);
+  const dispatch = useDispatch();
 
   return (
     <Pressable
@@ -75,37 +77,57 @@ const CheckBox = ({
           </Text>
         </>
       )}
-      {terms && (
-        <Text
-          style={{
-            marginLeft: 8,
-            color: color ? appColor.black : appColor.textWhite,
-            fontFamily: appFont.rR,
-            fontSize: fontScalling(1.6),
-            justifyContent: 'center',
-          }}>
-          I agree to the{' '}
-          <TouchableOpacity
-            onPress={() => {
-              navigation.navigate('TermsAndConditions');
+      {terms &&
+        userSettings?.links &&
+        userSettings?.links['terms & conditions'] != '' && (
+          <Text
+            style={{
+              marginLeft: 8,
+              color: color ? appColor.black : appColor.textWhite,
+              fontFamily: appFont.rR,
+              fontSize: fontScalling(1.6),
+              justifyContent: 'center',
             }}>
-            <Text
+            I agree to the{' '}
+            <TouchableOpacity
               onPress={() => {
-                if (userSettings?.links?.terms_and_conditions) {
-                  Linking.openURL(userSettings?.links?.terms_and_conditions);
+                if (
+                  userSettings?.links?.terms_and_conditions &&
+                  userSettings?.links?.terms_and_conditions != ''
+                ) {
+                  // Linking.openURL(userSettings?.links?.terms_and_conditions);
+                  dispatch(setTitle('terms & conditions'));
+                  navigation.navigate('chefLogin', {
+                    url: userSettings?.links['terms & conditions'],
+                  });
                 }
                 // navigation.navigate('TermsAndConditions');
-              }}
-              style={{
-                color: appColor.themeYellow,
-                top: 4,
               }}>
-              terms and conditions
-            </Text>
-          </TouchableOpacity>{' '}
-          of Fitsuvai
-        </Text>
-      )}
+              <Text
+                onPress={() => {
+                  if (
+                    userSettings &&
+                    userSettings?.links &&
+                    userSettings?.links['terms & conditions']
+                  ) {
+                    // Linking.openURL(userSettings?.links['terms & conditions']);
+                    dispatch(setTitle('Terms & Conditions'));
+                    navigation.navigate('chefLogin', {
+                      url: userSettings?.links['terms & conditions'],
+                    });
+                  }
+                  // navigation.navigate('TermsAndConditions');
+                }}
+                style={{
+                  color: appColor.themeYellow,
+                  top: 4,
+                }}>
+                terms and conditions
+              </Text>
+            </TouchableOpacity>{' '}
+            of Fitsuvai
+          </Text>
+        )}
     </Pressable>
   );
 };

@@ -1,14 +1,6 @@
 import React, {useState, useEffect, useRef, useCallback} from 'react';
-import {
-  View,
-  SafeAreaView,
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-} from 'react-native';
+import {View, ActivityIndicator, Text} from 'react-native';
 import ToggleButton from '../../components/Buttons/ToggleButtons';
-import {BigSpacer} from '../../utilities/spacer';
 import appColors from '../../utilities/appColors';
 import MainCard from '../../components/Card/MainCard';
 import PendingList from './PendingList';
@@ -23,9 +15,8 @@ import {fontScalling, scrnWidth} from '../../utilities/helperFunction';
 import {appFont} from '../../utilities/appFont';
 import {Pressable} from 'react-native';
 
-function ReviewPage({navigation}) {
+function ReviewPage() {
   const appColor = appColors();
-
   const [selection, setSelection] = useState(1);
   const [pending, setPending] = useState([]);
   const [publish, setPublish] = useState([]);
@@ -57,14 +48,12 @@ function ReviewPage({navigation}) {
         const formdata = new FormData();
         formdata.append('userId', userSettings.userInfo.user_id);
         formdata.append('context', 'myReview');
-        print(formdata, 'formdata');
         var requestOptions = {
           method: 'POST',
           body: formdata,
         };
         // get the response:
         const response = await fetch(url().reviewApi, requestOptions);
-        print(response, 'response');
         if (response.status == 200) {
           const resparse = await response.json();
           if (resparse.status == 'success') {
@@ -97,7 +86,6 @@ function ReviewPage({navigation}) {
       const formdata = new FormData();
       formdata.append('id', reviewId);
       formdata.append('context', 'deleteReview');
-      print(formdata, 'formdata');
       var requestOptions = {
         method: 'POST',
         body: formdata,
@@ -165,20 +153,14 @@ function ReviewPage({navigation}) {
                   refresh={refresh}
                   deleteFn={deleteButton}
                   pullRefresh={pullRefresh}
-                  // productImgUrl ={productImgUrl}
-                  // reviewImgUrl = {reviewImgUrl}
                 />
               )}
               {selection == 2 && (
                 <PublishedList
                   data={publish}
                   load={load}
-                  // editFn={editReview}
                   refresh={refresh}
-                  // deleteFn={deleteButton}
                   pullRefresh={pullRefresh}
-                  // productImgUrl ={productImgUrl}
-                  // reviewImgUrl = {reviewImgUrl}
                 />
               )}
             </View>
@@ -235,8 +217,6 @@ function ReviewPage({navigation}) {
                   flexDirection: 'row',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  // width: '100%',
-                  // backgroundColor:appColor.black
                 }}>
                 <Pressable
                   onPress={() => {

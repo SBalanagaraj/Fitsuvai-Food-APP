@@ -15,7 +15,6 @@ import {
   fontScalling,
   print,
   currencyConvertor,
-  formatDate,
   widthResponse,
 } from '../../utilities/helperFunction';
 import appColors from '../../utilities/appColors';
@@ -44,6 +43,7 @@ import {userSettingApi} from '../../redux/SettingSlice';
 import {formatedDate} from '../../utilities/helperFunction';
 import {useShowToast} from '../../components/Toast/ToastAlert';
 import {useIsFocused, useNavigation} from '@react-navigation/native';
+import FastImage from 'react-native-fast-image';
 
 const SubscribedPlanDetail = ({route}) => {
   const {styles} = useStyles();
@@ -146,8 +146,8 @@ const SubscribedPlanDetail = ({route}) => {
               styles.roboto_light,
               {
                 color: appColor.gold,
-                fontFamily: appFont.rB,
-                textTransform: 'capitalize',
+                fontFamily: appFont.rR,
+                // textTransform: 'capitalize',
               },
             ]}>
             {Object.keys(activity).includes(value)
@@ -179,6 +179,8 @@ const SubscribedPlanDetail = ({route}) => {
       apiCall('planDetail');
     }
   }, []);
+
+  print(renewData, 'renewData');
 
   // useEffect(() => {
   //   if (isFocus) {
@@ -387,7 +389,7 @@ const SubscribedPlanDetail = ({route}) => {
                       fontSize: fontScalling(1.8),
                     },
                   ]}>
-                  Order id : {`#${planDetails?.id}`}
+                  Order ID : {`#${planDetails?.id}`}
                 </Text>
               )}
               <Text style={[styles.subText, {textAlign: 'center'}]}>
@@ -620,17 +622,17 @@ const SubscribedPlanDetail = ({route}) => {
                   {renewData.proteins && renewData.proteins != '' && (
                     <DetailCard
                       keys={'Proteins'}
-                      value={`${renewData.proteins} G`}
+                      value={`${renewData.proteins} g`}
                     />
                   )}
                   {renewData.carbs && renewData.carbs != '' && (
                     <DetailCard
                       keys={'Carbohydrates'}
-                      value={`${renewData.carbs} G`}
+                      value={`${renewData.carbs} g`}
                     />
                   )}
                   {renewData.fats && renewData.fats != '' && (
-                    <DetailCard keys={'Fats'} value={`${renewData.fats} G`} />
+                    <DetailCard keys={'Fats'} value={`${renewData.fats} g`} />
                   )}
                 </View>
 
@@ -765,6 +767,7 @@ const SubscribedPlanDetail = ({route}) => {
                   flexDirection: 'row',
                   marginTop: 5,
                   justifyContent: 'space-between',
+                  marginBottom: 10,
                 }}>
                 {planDetails?.plan_status != 'Suspended' &&
                 planDetails?.plan_status != 'Cancelled' ? (
@@ -773,8 +776,8 @@ const SubscribedPlanDetail = ({route}) => {
                       Title="Cancel subscription"
                       black
                       profile
-                      parentStyle={{flex: 1, marginBottom: 20, marginRight: 10}}
-                      textStyle={{fontSize: fontScalling(2.3)}}
+                      parentStyle={{flex: 1, marginRight: 10}}
+                      textStyle={{fontSize: fontScalling(2)}}
                       onPress={() => {
                         setDeleteModal(true);
                       }}
@@ -786,8 +789,8 @@ const SubscribedPlanDetail = ({route}) => {
                       iconComponent="FontAwesome"
                       Title="Edit Food"
                       profile
-                      parentStyle={{flex: 1, marginBottom: 20}}
-                      textStyle={{fontSize: fontScalling(2.3)}}
+                      parentStyle={{flex: 1}}
+                      textStyle={{fontSize: fontScalling(2)}}
                       onPress={() => {
                         dispatch(setOnlyCustomPlan(false));
                         if (planDetails.id) {
@@ -1210,8 +1213,7 @@ const SubscribedPlanDetail = ({route}) => {
                 }}>
                 <View
                   style={{
-                    backgroundColor: appColor.white,
-                    // paddingHorizontal: 5,
+                    backgroundColor: appColor.cardbg,
                     paddingBottom: 15,
                     borderRadius: widthResponse ? 15 : 20, //@@
                     alignItems: 'flex-start',
@@ -1285,11 +1287,13 @@ const SubscribedPlanDetail = ({route}) => {
                                       style={{
                                         flexDirection: 'row',
                                         alignItems: 'center',
-                                        // borderWidth: 1,
+                                        borderWidth: 0.5,
+                                        borderColor: appColor.borderColor,
                                         padding: widthResponse ? 10 : 15, //@@
                                         borderRadius: 15,
-                                        backgroundColor: appColor.greyBg,
+                                        backgroundColor: appColor.white,
                                         marginBottom: 10,
+                                        elevation: 1.2,
                                       }}
                                       key={index}>
                                       {data.image != '' && (
@@ -1299,14 +1303,17 @@ const SubscribedPlanDetail = ({route}) => {
                                             backgroundColor: appColor.white,
                                             borderRadius: 10,
                                           }}>
-                                          <Image
+                                          <FastImage
                                             resizeMode="cover"
                                             style={{
                                               width: widthResponse ? 65 : 100, //@@
                                               height: widthResponse ? 65 : 100, //@@
                                               borderRadius: 10,
                                             }}
-                                            source={{uri: data.image}}
+                                            source={{
+                                              priority: FastImage.priority.high,
+                                              uri: data.image,
+                                            }}
                                           />
                                         </View>
                                       )}
@@ -1320,6 +1327,7 @@ const SubscribedPlanDetail = ({route}) => {
                                               style={[
                                                 styles.normalText,
                                                 {
+                                                  width: '70%',
                                                   marginBottom: widthResponse
                                                     ? 5
                                                     : 10, //@@

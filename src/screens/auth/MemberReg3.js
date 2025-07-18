@@ -1,7 +1,6 @@
-import {View, Text, Image, Pressable} from 'react-native';
+import {View, Text, Pressable} from 'react-native';
 import React, {useEffect, useRef, useState} from 'react';
 import {useForm, Controller} from 'react-hook-form';
-import {useIsFocused} from '@react-navigation/native';
 import * as yup from 'yup';
 import {useDispatch, useSelector} from 'react-redux';
 import {yupResolver} from '@hookform/resolvers/yup';
@@ -30,12 +29,12 @@ import UserPlanPrice from '../../Hooks/UserPlanPrice';
 import RadioButton from '../../components/Buttons/RadioButton';
 import {InputText} from '../../components/InputField/InputText';
 import ExpectedTime from '../../components/InputField/ExpectedTime';
+import FastImage from 'react-native-fast-image';
 
 const MemberReg3 = ({navigation}) => {
   const appColor = appColors();
   const textFocus = useRef(null);
   const dispatch = useDispatch();
-  const isFocus = useIsFocused();
 
   const {userSettings} = useSelector(state => state.setting);
   const {planAmmount} = useSelector(state => state.summary);
@@ -92,8 +91,9 @@ const MemberReg3 = ({navigation}) => {
         ? yup.string().notRequired()
         : yup.string().required('Select Your subscribtion'),
       are_you_busy: yup.string().required('Please select any one Options'),
-      cooking_comments: yup.string().required('please enter cooking comments '),
-      dislikes: yup.string().required('please enter dislikes '),
+      trainerStatus: yup.string().required('Please select any one Options'),
+      cooking_comments: yup.string().required('Please enter cooking comments '),
+      dislikes: yup.string().required('Please enter dislikes '),
     })
     .required();
 
@@ -129,6 +129,7 @@ const MemberReg3 = ({navigation}) => {
           oil_preference: data.oil_preference,
           spice_preference: data.spice_preference,
           are_you_busy: data.are_you_busy,
+          trainerStatus: data.trainerStatus,
           cooking_comments: data.cooking_comments,
           dislikes: data.dislikes,
         }),
@@ -424,9 +425,12 @@ const MemberReg3 = ({navigation}) => {
                                               : 0,
                                           borderColor: appColor.borderColor,
                                         }}>
-                                        <Image
+                                        <FastImage
                                           resizeMode="contain"
-                                          source={{uri: data.image}}
+                                          source={{
+                                            priority: FastImage?.priority.high,
+                                            uri: data.image,
+                                          }}
                                           style={{width: 40, height: 40}}
                                         />
                                         <Text
@@ -545,7 +549,9 @@ const MemberReg3 = ({navigation}) => {
                   <ExpectedTime
                     dark={true}
                     title={`${data.split(' ')[0]} Expected delivery Time:`}
-                    placeholder={`Enter Time btwn ${time.join(' ')}`}
+                    placeholder={`Enter Time ${
+                      widthResponse ? 'btwn' : 'between'
+                    } ${time.join(' ')}`}
                     value={expectedTimes[section]} // Bind devision value
                     onChange={setExpectedTimes}
                     error={timeValid}
@@ -554,6 +560,67 @@ const MemberReg3 = ({navigation}) => {
                 </View>
               );
             })}
+          {/* Personal trainer */}
+          <Controller
+            name="trainerStatus"
+            control={control}
+            render={({field: {onChange}}) => {
+              return (
+                <>
+                  <Text
+                    style={{
+                      marginTop: 10,
+                      fontFamily: appFont.rR,
+                      fontSize: fontScalling(1.8),
+                      color: appColor.white,
+                    }}>
+                    FIT SUVAI now provides personal training at an affordable
+                    rate! Would you like to join and take a step closer to
+                    achieving your fitness goals?
+                  </Text>
+                  <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                    <RadioButton
+                      onPress={() => {
+                        onChange('yes');
+                      }}
+                      dark
+                      text={'Yes'}
+                      altStyle={{
+                        width: 'auto',
+                        marginRight: widthResponse ? 10 : 15,
+                      }}
+                      isChecked={
+                        currentValues.trainerStatus == 'yes' ? true : false
+                      } //@@
+                    />
+                    <RadioButton
+                      onPress={() => {
+                        onChange('no');
+                      }}
+                      dark
+                      text={'No'}
+                      altStyle={{width: 'auto'}}
+                      isChecked={
+                        currentValues.trainerStatus == 'no' ? true : false
+                      } //@@
+                    />
+                  </View>
+                </>
+              );
+            }}
+          />
+          {errors.trainerStatus && (
+            <Text
+              style={{
+                // marginTop: 3,
+                color: appColor.formError,
+                fontSize: fontScalling(1.6),
+                fontFamily: appFont.rR,
+                marginBottom: widthResponse ? 10 : 20,
+              }}>
+              {errors.trainerStatus.message}
+            </Text>
+          )}
 
           <Controller
             name="are_you_busy"

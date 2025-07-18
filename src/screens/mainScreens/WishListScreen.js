@@ -109,7 +109,6 @@ export default function Wishlist() {
         formData.append('newCollection', newCollection);
       }
       formData.append('veg_filter', vegToggle ? '1' : '0');
-      print(formData, 'fd---');
       const wishlistUrl = url().wishList;
       const response = await fetch(wishlistUrl, {
         method: 'POST',

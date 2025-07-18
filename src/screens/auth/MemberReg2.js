@@ -4,11 +4,11 @@ import {useForm, Controller} from 'react-hook-form';
 import {useIsFocused} from '@react-navigation/native';
 import * as yup from 'yup';
 import {yupResolver} from '@hookform/resolvers/yup';
-import Geolocation from 'react-native-geolocation-service';
 // file import:
 import appColors from '../../utilities/appColors';
 import {
   fontScalling,
+  objectLength,
   print,
   widthResponse,
 } from '../../utilities/helperFunction';
@@ -31,12 +31,12 @@ import {
   requestLocationPermission,
 } from '../../utilities/GeolocationFunctions';
 
-const MemberReg2 = ({navigation}) => {
+const MemberReg2 = ({navigation, route}) => {
   const appColor = appColors();
   const textFocus = useRef(null);
   const showToast = useShowToast();
-  const isFocus = useIsFocused();
   const dispatch = useDispatch();
+  const {maps = ''} = route?.params ? route?.params : '';
 
   // states
   const [loadCL, setLoadCl] = useState(false);
@@ -50,22 +50,40 @@ const MemberReg2 = ({navigation}) => {
     nearLocation: '',
     is_weekEnd: 1,
   });
+
   const {planAmmount} = useSelector(state => state.summary);
   const {userSettings} = useSelector(state => state.setting);
+  const {userType} = useSelector(state => state.auth);
+  const userData =
+    userSettings && userSettings?.userInfo != '' && userSettings?.userInfo;
   const [pinCode, setPinCode] = useState('');
 
-  const {userType, profileData} = useSelector(state => state.auth);
+  // const adminCoordinates = `${
+  //   userSettings?.SITEINFO?.latitude &&
+  //   userSettings?.SITEINFO?.latitude != '' &&
+  //   userSettings?.SITEINFO?.latitude
+  // },
+  //   ${
+  //     userSettings?.SITEINFO?.longitude &&
+  //     userSettings?.SITEINFO?.longitude != '' &&
+  //     userSettings?.SITEINFO?.longitude
+  //   }`;
+
+  const adminCoordinates =
+    userSettings?.SITEINFO?.location &&
+    userSettings?.SITEINFO?.location != '' &&
+    userSettings?.SITEINFO?.location;
 
   const {PlanPriceInfo} = UserPlanPrice();
 
   useEffect(() => {
-    if (userType == 'user' && profileData) {
+    if (userType == 'user' && userData) {
       setPersionalInfo({
-        flatno: profileData.flatNumber, //adressbook
-        pincode: profileData.pincode,
-        street: profileData.street,
-        city: profileData.city,
-        state: profileData.state,
+        flatno: userData.flat, //adressbook
+        pincode: userData.pincode,
+        street: userData.street,
+        city: userData.city,
+        state: userData.state,
         nearLocation: '', //adressbook
         is_weekEnd: 1,
       });
@@ -80,29 +98,36 @@ const MemberReg2 = ({navigation}) => {
         is_weekEnd: 1,
       });
     }
-  }, [profileData]);
-
+  }, [userData]);
+  // get the manual Location
+  useEffect(() => {
+    if (maps != '' && objectLength(maps)) {
+      setPersionalInfo({
+        ...currentValues,
+        street: maps.street,
+        state: maps.state,
+        city: maps.city,
+        pincode: maps.pincode,
+      });
+    }
+  }, [maps]);
   // reset data for state updation in useForms
   useEffect(() => {
     reset(persionalInfo);
   }, [persionalInfo, reset]);
-
-  // // reset the data:
-  useEffect(() => {
-    if (!isFocus) {
-      reset();
-    }
-  }, [isFocus]);
 
   // validation:
   const schema = yup
     .object()
     .shape({
       flatno: yup.string().required('Please Provide flat number'),
-      pincode: yup.string().required('please enter pincode '),
-      street: yup.string().required('please enter street name '),
-      city: yup.string().required('please enter city name '),
-      state: yup.string().required('please enter state name '),
+      pincode: yup
+        .number()
+        .typeError('Please Enter a valid Number')
+        .required('Please enter pincode '),
+      street: yup.string().required('Please enter street name '),
+      city: yup.string().required('Please enter city name '),
+      state: yup.string().required('Please enter state name '),
       nearLocation: yup.string().notRequired(),
       is_weekEnd: yup.string().notRequired(),
     })
@@ -135,9 +160,8 @@ const MemberReg2 = ({navigation}) => {
         ],
         currentValues.pincode,
       );
-      print(userCoordinates, 'userCoordinates');
       if (userCoordinates) {
-        setDestination(userCoordinates);
+        setDestination(userCoordinates ? userCoordinates : '');
       }
       if (currentValues.street && currentValues.city && currentValues.state) {
         const getPincode = await getPincodeFromAddress([
@@ -174,8 +198,6 @@ const MemberReg2 = ({navigation}) => {
         };
       });
       setLoadCl(false);
-    } else {
-      setLoadCl(false);
     }
   };
 
@@ -184,13 +206,12 @@ const MemberReg2 = ({navigation}) => {
     if (
       isValid &&
       userSettings &&
-      userSettings?.SITEINFO &&
-      userSettings?.SITEINFO?.location &&
+      userSettings?.ADDRESS &&
       userSettings?.RADIUS &&
       Object.keys(destination).length > 0
     ) {
       const distancematrix = await AdminDistanceRadius(
-        userSettings?.SITEINFO?.location,
+        adminCoordinates,
         destination,
         userSettings?.RADIUS,
       );
@@ -218,6 +239,9 @@ const MemberReg2 = ({navigation}) => {
     } else {
       showToast('error', 'some Thing Went Wrong!', '', 1500);
     }
+    if (destination == '') {
+      showToast('error', '', 'Please fill in the valid address');
+    }
   };
 
   return (
@@ -243,8 +267,8 @@ const MemberReg2 = ({navigation}) => {
                 placeholder="Enter Flat Number"
                 icon="MaterialCommunityIcons"
                 iconName="locker"
-                dark
                 leftIcon={true} //@@
+                dark
                 // autoCapitalize="none"
                 iconSize={widthResponse ? 18 : 25} //@@
                 onChangeText={onChange}
@@ -265,8 +289,8 @@ const MemberReg2 = ({navigation}) => {
                 customStyle={{flex: 1}}
                 leftIcon
                 dark
-                Title="Pincode"
                 keyboardType={'numeric'}
+                Title="Pincode"
                 placeholder="Enter your Pincode"
                 icon="MaterialCommunityIcons"
                 iconName="mailbox-up-outline"
@@ -291,11 +315,11 @@ const MemberReg2 = ({navigation}) => {
                 row
                 Title="Street"
                 placeholder="Enter Your  Street"
+                leftIcon={true} //@@
                 icon="FontAwesome5"
                 iconName="road"
+                iconSize={widthResponse ? 20 : 30}
                 dark
-                leftIcon={true} //@@
-                iconSize={widthResponse ? 20 : 30} //@@                dark
                 multiline={true}
                 onChangeText={onChange}
                 formError={errors.street}
@@ -400,6 +424,7 @@ const MemberReg2 = ({navigation}) => {
                   flexDirection: 'row',
                   alignItems: 'center',
                   justifyContent: 'flex-start',
+                  marginTop: widthResponse ? 5 : 10,
                 }}>
                 <CheckBox
                   // onPress={() =>
@@ -422,34 +447,64 @@ const MemberReg2 = ({navigation}) => {
         />
       </View>
       {/* current Location */}
-      <FilterButton
-        load={loadCL}
-        onPress={async () => {
-          const isGranted = await requestLocationPermission();
-          console.log(isGranted, 'isGranted');
-          if (isGranted && isGranted != 'settings') {
-            getUserLocations();
-          } else {
-            await handleLocationPermission();
-          }
-        }}
-        ICN={'FontAwesome6'}
-        IN={'location-crosshairs'}
-        title={'Current location'}
-        altTextStyle={{
-          color: appColor.textBlack,
-          paddingLeft: 10,
-          fontFamily: appFont.bB,
-          fontSize: fontScalling(2.5),
-        }}
-        altStyle={{
-          width: '100%',
-          marginBottom: 15,
-          backgroundColor: appColor.bgWhite,
-          paddingVertical: 12,
-          justifyContent: 'center',
-        }}
-      />
+      <View
+        style={{
+          flexDirection: 'row',
+        }}>
+        <FilterButton
+          load={loadCL}
+          onPress={async () => {
+            const isGranted = await requestLocationPermission();
+            console.log(isGranted, 'isGranted');
+            if (isGranted && isGranted != 'settings') {
+              getUserLocations();
+            } else {
+              await handleLocationPermission();
+            }
+          }}
+          ICN={'FontAwesome6'}
+          IN={'location-crosshairs'}
+          title={'Current location'}
+          altTextStyle={{
+            color: appColor.textBlack,
+            fontFamily: appFont.bB,
+            fontSize: fontScalling(2.5),
+          }}
+          altStyle={{
+            flex: 1,
+            marginVertical: widthResponse ? 15 : 20,
+            backgroundColor: appColor.bgWhite,
+            paddingVertical: 12,
+            justifyContent: 'center',
+          }}
+        />
+        <FilterButton
+          onPress={() => {
+            navigation.navigate('manualLocation', {
+              page: 'member_2',
+              intial: false,
+            });
+          }}
+          ICN={'FontAwesome6'}
+          IN={'map-location-dot'}
+          ICNSIZE={widthResponse ? 17 : 24}
+          title={'Choose location'}
+          altTextStyle={{
+            color: appColor.textBlack,
+            paddingLeft: 10,
+            fontFamily: appFont.bB,
+            fontSize: fontScalling(2.5),
+          }}
+          altStyle={{
+            flex: 1,
+            marginLeft: 10,
+            marginVertical: widthResponse ? 15 : 20,
+            backgroundColor: appColor.bgWhite,
+            paddingVertical: 10,
+            justifyContent: 'center',
+          }}
+        />
+      </View>
       {/* Next */}
       <PrimaryButton
         Title={'Next'}

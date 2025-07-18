@@ -7,7 +7,6 @@ import {
   View,
   FlatList,
   Alert,
-  ImageBackground,
 } from 'react-native';
 import React, {useState, useRef, useEffect, useCallback} from 'react';
 import ImageView from 'react-native-image-viewing';
@@ -40,6 +39,8 @@ import {DetailShimmer} from '../../utilities/appShimmer';
 import {useSelector} from 'react-redux';
 import RadioButton from '../../components/Buttons/RadioButton';
 import ProductCard from '../../components/Card/ProductCard';
+import ReadMore from '../../components/Buttons/ReadMore';
+import FastImage from 'react-native-fast-image';
 
 const ProductDetails = ({route, navigation}) => {
   const {styles} = useStyles();
@@ -71,7 +72,7 @@ const ProductDetails = ({route, navigation}) => {
             style={[
               {
                 flexDirection: 'row',
-                alignItems: 'center',
+                alignItems: 'flex-start',
                 justifyContent: 'space-around',
                 paddingVertical: 8,
                 borderBottomWidth: 0.4,
@@ -84,17 +85,44 @@ const ProductDetails = ({route, navigation}) => {
               duration={1000}
               style={[
                 styles.normalText,
-                {flex: 1, alignSelf: 'flex-start', paddingLeft: 15},
+                {
+                  flex: 1,
+                  alignSelf: 'flex-start',
+                  paddingLeft: 15,
+                  fontFamily: appFont.bB,
+                  color: appColor.gold,
+                },
               ]}>
               {keys}
             </Animatable.Text>
             <Text style={styles.normalText}>:</Text>
-            <Animatable.Text
+            <ReadMore
+              numOfLine={2}
+              content={values}
+              contentStyle={[styles.normalText, {paddingLeft: 20}]}
+              parentStyle={{width: '50%'}}
+              readStyle={{
+                // backgroundColor: 'transparent',
+                fontFamily: appFont.rM,
+                fontSize: fontScalling(1.5),
+                color: appColor.greyBack,
+                padding: 0,
+                margin: 0,
+              }}
+              readBg={{
+                backgroundColor: appColor.white,
+                padding: 0,
+                margin: 0,
+                // padding: 4,
+                // marginTop: 5,
+              }}
+            />
+            {/* <Animatable.Text
               // animation={'fadeInRight'}
               duration={1000}
               style={[styles.normalText, {flex: 1, paddingLeft: 25}]}>
               {values}
-            </Animatable.Text>
+            </Animatable.Text> */}
           </View>
         )}
       </>
@@ -183,7 +211,7 @@ const ProductDetails = ({route, navigation}) => {
     product_group,
     short_description,
     product_description,
-    additional_info,
+    ingredients,
     protein,
     calories,
     fats,
@@ -194,10 +222,8 @@ const ProductDetails = ({route, navigation}) => {
     url: uri,
     gi,
     gl,
+    product_sku,
   } = productInfo;
-
-  // console.log(images, 'images -- main_image,');
-  // console.log(main_image, 'main_image,');
 
   const productToReview = {
     product_name: name,
@@ -214,6 +240,10 @@ const ProductDetails = ({route, navigation}) => {
     id: id,
     name: name,
     image: images && images != undefined && images.length > 0 ? images[0] : '',
+    main_image:
+      main_image && main_image != undefined && main_image.length > 0
+        ? main_image[0]
+        : '',
     size: size,
     offer: offer,
     discount: discount,
@@ -228,6 +258,9 @@ const ProductDetails = ({route, navigation}) => {
     minerals,
     carbs,
   };
+
+  const ratingValid =
+    reviewList && reviewList.reviews && reviewList.reviews.length > 0;
 
   const productsToShow = {
     id: id,
@@ -244,14 +277,24 @@ const ProductDetails = ({route, navigation}) => {
   };
 
   const onShare = async () => {
-    if (images[0]) {
-      const filename = images[0] && images[0].split('/').slice(-1).toString();
+    const urls = `https://www.fitsuvai.com/productDetail/${id}`;
+    if (
+      images && images.length > 0
+        ? images[0]
+        : main_image && main_image.length > 0 && main_image[0]
+    ) {
+      const validImage =
+        images && images.length > 0
+          ? images[0]
+          : main_image && main_image.length > 0 && main_image[0];
+      const filename = validImage && validImage.split('/').slice(-1).toString();
       try {
         const filePath = RNFS.DocumentDirectoryPath + `/${filename}`;
-        const response = await fetch(images[0]);
+        const response = await fetch(validImage);
         const blob = await response.blob();
         const fileReaderInstance = new FileReader();
         fileReaderInstance.readAsDataURL(blob);
+        ``;
         fileReaderInstance.onloadend = async () => {
           const base64data = fileReaderInstance.result;
           await RNFS.writeFile(filePath, base64data.split(',')[1], 'base64');
@@ -309,7 +352,10 @@ const ProductDetails = ({route, navigation}) => {
       refresh={refresh}
       productId={productsToShow?.id}
       borderRadius={50}
-      altStyle={{paddingTop: 23, paddingHorizontal: 0}}>
+      altStyle={{
+        paddingTop: 23,
+        paddingHorizontal: 0,
+      }}>
       {objectLength(productsToShow) && (
         <>
           {load ? (
@@ -319,7 +365,11 @@ const ProductDetails = ({route, navigation}) => {
           ) : (
             <>
               {productsToShow.name && (
-                <Text style={[styles.HeadingText, {textAlign: 'center'}]}>
+                <Text
+                  style={[
+                    styles.HeadingText,
+                    {textAlign: 'center', paddingTop: 10},
+                  ]}>
                   {productsToShow.name}
                 </Text>
               )}
@@ -331,6 +381,7 @@ const ProductDetails = ({route, navigation}) => {
                       flexDirection: 'row',
                       alignItems: 'center',
                       alignSelf: 'center',
+                      marginBottom: 15,
                     }}>
                     <RatingComponent rating={reviewList.reviewdata.average} />
                     <Text style={[styles.subText]}>
@@ -343,7 +394,6 @@ const ProductDetails = ({route, navigation}) => {
                 )}
               {/* banner Image */}
               {arrayLength(productsToShow.image) && (
-                // <></>
                 <Pressable
                   onPress={() => {
                     setIsVisible(true);
@@ -357,31 +407,31 @@ const ProductDetails = ({route, navigation}) => {
                     // borderWidth: 1,
                     overflow: 'hidden',
                   }}>
-                  <ImageBackground
-                    resizeMode="cover"
-                    source={{
-                      uri: productsToShow.image
-                        ? productsToShow.image[imgIndex]
-                        : '',
-                    }}
+                  <View
                     style={{
                       borderRadius: 15,
                       backgroundColor: appColor.cartBg,
-                      height: scrnHeight / 3.5,
+                      height: scrnHeight / 3.8,
                       position: 'relative',
                       alignItems: 'center',
                       justifyContent: 'center',
                       width: '100%',
                       alignSelf: 'center',
-                      marginTop: 15,
-                      // borderWidth: 1,
                       overflow: 'hidden',
                     }}>
+                    <FastImage
+                      style={{
+                        ...StyleSheet.absoluteFillObject, // Makes the image cover the entire parent
+                      }}
+                      resizeMode="cover"
+                      source={{
+                        priority: FastImage.priority.high,
+                        uri: productsToShow.image
+                          ? productsToShow.image[imgIndex]
+                          : '',
+                      }}
+                    />
                     <Animatable.View
-                      // animation={'zoomIn'}
-                      // duration={1000}
-                      // iterationDelay={200}
-                      // iterationCount={'infinite'}
                       style={{position: 'absolute', top: '10%', left: 0}}>
                       {productsToShow.offer && productsToShow.offer != 0 && (
                         <OfferTag
@@ -418,20 +468,8 @@ const ProductDetails = ({route, navigation}) => {
                         />
                       </Pressable>
                     </View>
-                    {/* {productsToShow.image && (
-                      <Animatable.Image
-                        animation={'zoomIn'}
-                        duration={1000}
-                        resizeMode="contain"
-                        style={{
-                          width: scrnWidth / 1.8,
-                          height: scrnHeight / 5,
-                          // borderRadius: (scrnWidth / 2.8) * 2,
-                        }}
-                        source={{uri: productsToShow.image[imgIndex]}}
-                      />
-                    )} */}
-                  </ImageBackground>
+                  </View>
+                  {/* </ImageBackground> */}
                 </Pressable>
               )}
               {/* list items */}
@@ -482,6 +520,7 @@ const ProductDetails = ({route, navigation}) => {
                         alignSelf: 'center',
                       }}>
                       <FlatList
+                        // maxToRenderPerBatch={5}
                         data={productsToShow.image}
                         ref={dateRef}
                         keyExtractor={(item, index) => index}
@@ -511,13 +550,7 @@ const ProductDetails = ({route, navigation}) => {
                               key={index}
                               onPress={() => {
                                 setImgIndex(index);
-                              }}>
-                              {/* <Image
-                                resizeMode="contain"
-                                style={{width: '100%', height: '100%'}}
-                                source={{uri: item}}
-                              /> */}
-                            </Pressable>
+                              }}></Pressable>
                           );
                         }}
                       />
@@ -587,21 +620,23 @@ const ProductDetails = ({route, navigation}) => {
                     Nutrients in food
                   </Text>
                 ))}
+
               {/* {protein && <NutritionCard keys={'Protein'} values={protein} />} */}
+
+              {calories && calories != 0 && (
+                <NutritionCard keys={'calories'} values={`${calories} cal`} />
+              )}
               {protein && protein != 0 && (
                 <NutritionCard keys={'Proteins'} values={`${protein} g`} />
-              )}
-              {vitamins && vitamins != 0 && (
-                <NutritionCard keys={'vitamins'} values={`${vitamins}`} />
               )}
               {carbs && carbs != 0 && (
                 <NutritionCard keys={'carbs'} values={`${carbs} g`} />
               )}
-              {calories && calories != 0 && (
-                <NutritionCard keys={'calories'} values={`${calories} cal`} />
-              )}
               {fats && fats != 0 && (
                 <NutritionCard keys={'Fats'} values={`${fats} g`} />
+              )}
+              {vitamins && vitamins != 0 && (
+                <NutritionCard keys={'vitamins'} values={`${vitamins}`} />
               )}
               {minerals && minerals != 0 && (
                 <NutritionCard
@@ -610,6 +645,7 @@ const ProductDetails = ({route, navigation}) => {
                   // altStyle={{marginBottom: 15}}
                 />
               )}
+
               {gi && gi != 0 && (
                 <NutritionCard
                   keys={'GI'}
@@ -623,6 +659,12 @@ const ProductDetails = ({route, navigation}) => {
                   values={gl}
                   // altStyle={{marginBottom: 15}}
                 />
+              )}
+              {product_sku && product_sku != 0 && (
+                <NutritionCard keys={'sku'} values={`${product_sku} `} />
+              )}
+              {category && category != 0 && (
+                <NutritionCard keys={'Category'} values={`${category} `} />
               )}
 
               {short_description && (
@@ -648,7 +690,8 @@ const ProductDetails = ({route, navigation}) => {
                     marginVertical: 10,
                   }}
                   renderItem={({item: data, index}) => {
-                    const active = index === sizeIndex;
+                    const activeIndex = sizes.findIndex(data => data.id == id);
+                    const active = activeIndex == index;
                     return (
                       <Animatable.View
                         animation={'bounceInRight'}
@@ -670,7 +713,7 @@ const ProductDetails = ({route, navigation}) => {
                           }}
                           isChecked={active}
                           text={`${data.size.toUpperCase()} @ ${currencyConvertor(
-                            Number(data.offer).toFixed(0),
+                            Number(data.offer).toFixed(2),
                           )}`}
                           altStyle={{
                             borderWidth: 1,
@@ -693,6 +736,7 @@ const ProductDetails = ({route, navigation}) => {
                 />
               )}
               {/* Ratings and reviews */}
+
               {
                 <View
                   style={{
@@ -707,15 +751,16 @@ const ProductDetails = ({route, navigation}) => {
                       style={{alignItems: 'center'}}>
                       <Text
                         style={[
-                          styles.normalText,
+                          styles.HeadingText,
                           {
                             color:
-                              toggleButton == 0
+                              toggleButton == 0 && ratingValid
                                 ? appColor.bgBlack
-                                : appColor.ratingGray,
+                                : appColor.gold,
+                            textDecorationLine: 'underline',
                           },
                         ]}>
-                        Details
+                        Descriptions
                       </Text>
                       {toggleButton == 0 &&
                       reviewList &&
@@ -746,7 +791,7 @@ const ProductDetails = ({route, navigation}) => {
                             {
                               color:
                                 (product_description == '' &&
-                                  additional_info == '') ||
+                                  ingredients == '') ||
                                 toggleButton == 1
                                   ? appColor.bgBlack
                                   : appColor.ratingGray,
@@ -769,25 +814,38 @@ const ProductDetails = ({route, navigation}) => {
               }
               {toggleButton == 0 && (
                 <>
-                  {product_description && (
-                    <Animatable.View
-                      animation={'fadeInUp'}
-                      duration={1000}
-                      style={{padding: 5}}>
-                      {short_description && (
+                  {product_description != '' && (
+                    <Animatable.View animation={'fadeInUp'} duration={1000}>
+                      {
                         <>
                           <AutoHeightHTML url={product_description} />
-                          <View style={{paddingTop: 10}}>
-                            <AutoHeightHTML url={additional_info} />
-                          </View>
+                          {ingredients && ingredients != '' && (
+                            <View style={{paddingTop: 5}}>
+                              {/* <HtmlView url={additional_info} /> */}
+                              <Text
+                                style={[
+                                  styles.normalText,
+                                  {
+                                    // textAlign: 'center',
+                                    textDecorationLine: 'underline',
+                                    fontSize: fontScalling(2.2),
+                                    fontFamily: appFont.bB,
+                                    marginTop: 15,
+                                  },
+                                ]}>
+                                Ingredients :
+                              </Text>
+                              <AutoHeightHTML url={ingredients} />
+                            </View>
+                          )}
                         </>
-                      )}
+                      }
                     </Animatable.View>
                   )}
                 </>
               )}
-              {((product_description == '' && additional_info == '') ||
-                toggleButton == 1) && (
+              {/* {(product_description == '' || toggleButton == 1) && ( */}
+                  { (
                 <>
                   {reviewList &&
                     reviewList.reviews &&
@@ -858,10 +916,13 @@ const ProductDetails = ({route, navigation}) => {
                       data={related.slice(0, 4)}
                       keyExtractor={(item, ind) => item.name.toString()}
                       renderItem={({item, index}) => {
-                        // print(item, 'item');
                         return (
-                          // <></>
-                          <ProductCard key={index} item={item} ind={index} />
+                          <ProductCard
+                            bgGrey={true}
+                            key={index}
+                            item={item}
+                            ind={index}
+                          />
                         );
                       }}
                     />
@@ -871,7 +932,14 @@ const ProductDetails = ({route, navigation}) => {
             </>
           )}
           <ImageView
-            images={images && images.map(data => ({uri: data}))}
+            // images={images && images.map(data => ({uri: data}))}
+            images={
+              images && images.length > 0
+                ? images.map(data => ({uri: data}))
+                : main_image && main_image.length > 0
+                ? main_image.map(data => ({uri: data}))
+                : null
+            }
             imageIndex={imgIndex}
             visible={visible}
             onRequestClose={() => setIsVisible(false)}

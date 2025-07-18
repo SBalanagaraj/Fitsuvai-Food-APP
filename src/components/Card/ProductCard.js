@@ -4,17 +4,16 @@ import appColors from '../../utilities/appColors';
 import {
   currencyConvertor,
   fontScalling,
-  print,
   scrnWidth,
   widthResponse,
 } from '../../utilities/helperFunction';
-import * as Animatable from 'react-native-animatable';
 import {appFont} from '../../utilities/appFont';
 import OfferTag from '../CssShape/OfferTag';
 import {useNavigation} from '@react-navigation/native';
 import AddToCartBtn from '../Buttons/AddToCartBtn';
 import FavIconButton from '../Buttons/FavIcon';
 import {useSelector} from 'react-redux';
+import FastImage from 'react-native-fast-image';
 
 const ProductCard = ({
   item,
@@ -22,6 +21,7 @@ const ProductCard = ({
   calculative = false,
   collectionName = '',
   onPress = () => {},
+  bgGrey = false,
 }) => {
   // print(item, 'item');
   const appColor = appColors();
@@ -46,29 +46,34 @@ const ProductCard = ({
         styles.card,
         {
           width: cardWidth,
-          marginBottom: calculative ? 15 : 0,
+          marginBottom: calculative ? 15 : 7,
+          elevation: 2,
+          backgroundColor: bgGrey ? appColor.cardbg : appColor.white,
         },
       ]}>
+      <View style={{alignSelf: 'flex-end', paddingTop: 5}}>
+        {item.discount && item.discount != '' && item.discount != 0 && (
+          <OfferTag offer={Number(item.discount).toFixed(0) + '% off'} />
+        )}
+      </View>
       <View
         style={{
-          backgroundColor: appColor.white,
+          backgroundColor: appColor.cartBg,
           margin: 5,
-          width: cardWidth / 1.5,
-          height: cardWidth / 1.5,
+          width: cardWidth / 1.7,
+          height: cardWidth / 1.7,
           borderRadius: cardWidth / 3,
           alignItems: 'center',
           justifyContent: 'center',
           alignSelf: 'center',
-          // marginBottom: widthResponse ? 15 : 20, //@@
+          elevation: 4,
         }}>
         {item && (
-          <Animatable.Image
-            animation={'zoomIn'}
-            duration={800}
-            delay={500 * (ind + 1)}
-            style={{width: '75%', height: '75%', borderRadius: 100}}
+          <FastImage
+            style={{width: '85%', height: '85%', borderRadius: 100}}
             resizeMode="cover"
             source={{
+              priority: FastImage.priority.high,
               uri:
                 item.image && item.image != ''
                   ? item.image
@@ -84,12 +89,12 @@ const ProductCard = ({
           <Text
             numberOfLines={1}
             style={{
-              color: appColor.black,
+              color: appColor.Textlightblack,
               fontFamily: appFont.bB,
               paddingBottom: 3,
               paddingRight: 8, //@@
               // marginBottom: widthResponse ? 5 : 10,
-              fontSize: widthResponse ? fontScalling(2.4) : fontScalling(2.7), //@@
+              fontSize: widthResponse ? fontScalling(1.9) : fontScalling(2.7), //@@
             }}>
             {item.name}
           </Text>
@@ -111,18 +116,18 @@ const ProductCard = ({
         <View
           style={{
             flexDirection: 'row',
-            alignItems: 'center',
+            alignItems: 'flex-start',
             justifyContent: 'space-between',
             overflow: 'hidden',
           }}>
-          <View style={{width: '55%'}}>
+          <View>
             {item.protein && (
               <Text
                 style={{
                   color: appColor.Textlightblack,
-                  fontSize: fontScalling(1.3),
+                  fontSize: fontScalling(1.5),
                   fontFamily: appFont.rM,
-                  paddingBottom: 3,
+                  paddingBottom: 2,
                 }}>{`Protein : ${
                 item.protein == 0 ? 'N/A' : item.protein + ' g'
               }`}</Text>
@@ -131,18 +136,13 @@ const ProductCard = ({
               <Text
                 style={{
                   color: appColor.Textlightblack,
-                  fontSize: fontScalling(1.3),
+                  fontSize: fontScalling(1.5),
                   fontFamily: appFont.rM,
-                  paddingBottom: 8,
+                  paddingBottom: 5,
                   // width: '55%',
                 }}>{`Calories : ${
                 item.calories == 0 ? 'N/A' : item.calories + ' cal'
               }`}</Text>
-            )}
-          </View>
-          <View style={{alignSelf: 'center'}}>
-            {item.discount && item.discount != '' && item.discount != 0 && (
-              <OfferTag offer={Number(item.discount).toFixed(0) + '% off'} />
             )}
           </View>
         </View>
@@ -159,9 +159,9 @@ const ProductCard = ({
               numberOfLines={1}
               style={{
                 // flex: 1,
-                color: appColor.black,
+                color: appColor.Textlightblack,
                 fontFamily: appFont.bB,
-                fontSize: fontScalling(2.4),
+                fontSize: fontScalling(2.1),
                 textAlignVertical: 'bottom',
               }}>
               {currencyConvertor(item.offer, 2)}
@@ -189,7 +189,7 @@ const ProductCard = ({
         style={{
           flexDirection: 'row',
           alignItems: 'center',
-          justifyContent: 'space-between',
+          justifyContent: userType == 'user' ? 'space-between' : 'flex-end',
           paddingTop: 8,
           // paddingVertical: 8,
           paddingRight: 5,
@@ -214,11 +214,11 @@ const useStyles = () => {
   const appColor = appColors();
   const styles = StyleSheet.create({
     card: {
-      marginRight: 15,
+      marginRight: 10,
       borderRadius: 10,
-      backgroundColor: appColor.cartBg,
       paddingBottom: 15,
       paddingTop: 5,
+      marginBottom: 5,
     },
   });
   return {styles};

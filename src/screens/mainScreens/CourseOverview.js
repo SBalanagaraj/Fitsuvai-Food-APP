@@ -303,7 +303,7 @@ const useStyle = () => {
     flatlist: {paddingBottom: widthResponse ? 90 : 120},
     card_out: {width: '50%'},
     card_in: {
-      backgroundColor: appColor.greyBg,
+      backgroundColor: appColor.white,
       borderRadius: 10,
       padding: 6,
       paddingBottom: 10,

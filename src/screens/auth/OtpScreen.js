@@ -1,9 +1,7 @@
 import {
-  Alert,
   Image,
   ImageBackground,
   Keyboard,
-  Pressable,
   StatusBar,
   StyleSheet,
   Text,
@@ -24,7 +22,6 @@ import {appFont} from '../../utilities/appFont';
 import appColors from '../../utilities/appColors';
 import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
 import PrimaryButton from '../../components/Buttons/PrimaryButton';
-import OTPTextInput from 'react-native-otp-textinput';
 import {useShowToast} from '../../components/Toast/ToastAlert';
 import {url} from '../../utilities/appApi';
 import {useDispatch, useSelector} from 'react-redux';
@@ -34,8 +31,8 @@ import {
   setUserType,
 } from '../../redux/authSlice';
 import * as Animatable from 'react-native-animatable';
-import {setTotal} from '../../redux/CartSlice';
 import {useIsFocused} from '@react-navigation/native';
+import LottieView from 'lottie-react-native';
 
 const Otp_auth = ({navigation, route}) => {
   const appColor = appColors();
@@ -45,30 +42,13 @@ const Otp_auth = ({navigation, route}) => {
   const {otpStartTime} = useSelector(state => state.auth);
   const isFocus = useIsFocused();
 
-  const [seconds, setSeconds] = useState(300);
   const [timing, setTiming] = useState(0);
   const [digits, setDigits] = useState(['', '', '', '', '']);
-
-  // Your OTP expires in 4 minutes 37 seconds
-
-  // useEffect(() => {
-  //   if (seconds <= 0) {
-  //     return;
-  //   }
-  //   const interval = setInterval(() => {
-  //     setSeconds(prevSeconds => prevSeconds - 1);
-  //   }, 1000);
-  //   return () => clearInterval(interval);
-  // }, [seconds]);
-
-  const formatTime = totalSeconds => {
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes} minutes ${seconds < 10 ? '0' : ''}${seconds} seconds`;
-  };
+  const [load, setLoad] = useState(false);
 
   const OtpTimeFunction = () => {
     const timer = setInterval(timerFun, 1000);
+
     function timerFun() {
       if (isFocus) {
         var startTime = new Date(otpStartTime);
@@ -162,10 +142,8 @@ const Otp_auth = ({navigation, route}) => {
 
   // api
   const apiCall = async (otp = '') => {
-    console.log(otp, 'otp');
     try {
-      // request data for backend:
-      // var myHeaders = new Headers();
+      setLoad(true);
       const formData = new FormData();
       formData.append('email', route.params.email);
       if (otp != '') {
@@ -183,23 +161,10 @@ const Otp_auth = ({navigation, route}) => {
       if (response.status == 200) {
         const resparse = await response.json();
         if (resparse.status == 'success') {
-          // {
-          //   "user_id": "66",
-          //   "first_name": "test",
-          //   "last_name": "test",
-          //   "gender": "male",
-          //   "phone": "1234566990",
-          //   "email": "balanagaraj@bugtreat.com",
-          //   "flat": "1",
-          //   "street": "Jawahar Nagar 2nd Street",
-          //   "city": "test",
-          //   "state": "test",
-          //   "pincode": "625006",
-          //   "picture": "https://fitsuvai.bugtreat.org/uploads/customers/1727846739109703186566fcd95316cf7.jpeg"
-          // }
           Keyboard.dismiss();
           if (otp != '') {
             if (resparse.data) {
+              dispatch(setUserType('user'));
               dispatch(
                 setProfileData({
                   userId: resparse.data.user_id,
@@ -217,208 +182,205 @@ const Otp_auth = ({navigation, route}) => {
                     name: 'profile.jpeg',
                     type: 'image/jpeg',
                   },
+                  weight: resparse.weight,
+                  height: resparse.height,
+                  age: resparse.age,
+                  bmi: resparse.bmi,
+                  activity: resparse.activity,
+                  bmr: resparse.bmr,
+                  tef: resparse.tef,
+                  tdee: resparse.tdee,
+                  goal: resparse.goal,
+                  mac_protein: resparse.mac_protein,
+                  mac_calories: resparse.mac_calories,
+                  mac_fats: resparse.mac_fats,
                 }),
               );
-              dispatch(setUserType('user'));
+              setLoad(false);
             }
           }
-          showToast('success', '', resparse.message, 1200);
+          showToast('success', '', resparse.message, 10000);
+          setLoad(false);
           if (otp != '') {
-            setSeconds(300);
-          }
-          if (otp != '') {
-            navigation.navigate('home');
+            navigation.navigate('main');
+            setLoad(false);
           }
         } else if (resparse.status == 'warning') {
           showToast('info', '', resparse.message, 2500);
+          setLoad(false);
         }
       } else if (response.status == 404) {
         Keyboard.dismiss();
         const resparse = await response.json();
         setDigits(['', '', '', '', '']);
         showToast('info', '', resparse.message, 2500);
+        setLoad(false);
       } else {
         print(response.status, 'status in home screen');
+        setLoad(false);
       }
     } catch (e) {
       console.log(e, 'error in home screen');
+      setLoad(false);
     }
   };
 
   const {styles} = useStyle();
 
   return (
-    <ImageBackground
-      resizeMode="stretch"
-      style={{
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        position: 'relative',
-      }}
-      source={require('../../../assets/images/background_reg.png')}>
-      <StatusBar backgroundColor={'transparent'} translucent />
-      <Animatable.Image
-        animation={'fadeInUp'}
-        source={require('../../../assets/images/bean.png')}
-        style={styles.bean}
-        resizeMode="contain"
-      />
-      <Image
-        source={require('../../../assets/images/curry_leaf.png')}
-        style={styles.neam}
-        resizeMode="contain"
-      />
-      <KeyboardAwareScrollView
-        keyboardShouldPersistTaps={'always'}
-        contentContainerStyle={{
-          paddingHorizontal: 20,
-          justifyContent: 'center',
-          alignItems: 'center',
-          // paddingTop: widthResponse ? 100 : 120,
-          paddingBottom: 10,
-          flex: 1,
-        }}
-        scrollEnabled={true}
-        enableAutomaticScroll={true}
-        extraHeight={300}
-        showsVerticalScrollIndicator={false}>
+    <>
+      {load && (
         <View
           style={{
-            marginBottom: widthResponse ? 15 : 25,
+            position: 'absolute',
+            zIndex: 100,
+            flex: 1,
+            height: scrnHeight,
+            width: scrnWidth,
+            alignItems: 'center',
+            justifyContent: 'center',
           }}>
-          <Animatable.Image
-            animation={'zoomIn'}
-            source={require('../../../assets/images/orange.png')}
-            resizeMode="contain"
-            style={styles.main}
+          <LottieView
+            autoPlay={true}
+            style={{width: scrnWidth * 0.5, height: scrnWidth * 0.5}}
+            source={require('../../../assets/lottieFiles/load.json')}
           />
         </View>
-        <Text
-          style={{
-            fontFamily: appFont.bB,
-            fontSize: fontScalling(3.5),
-            color: appColor.textWhite,
-            marginBottom: widthResponse ? 10 : 15,
-          }}>
-          otp verification
-        </Text>
-        <Text
-          style={{
-            fontSize: fontScalling(1.8),
-            color: appColor.white,
-            textAlign: 'center',
-            fontFamily: appFont.rR,
-            marginBottom: widthResponse ? 20 : 30,
-          }}>
-          Food is fuel, not therapy.
-        </Text>
-        <Text
-          style={{
-            fontSize: fontScalling(1.8),
-            color: appColor.white,
-            textAlign: 'center',
-            fontFamily: appFont.rR,
-            marginBottom: widthResponse ? 20 : 30,
-          }}>
-          Cras eros ligula, venenatis et consequat sed, efficitur non sem. In
-          quis sapien
-        </Text>
-        <View style={{marginBottom: widthResponse ? 20 : 30}}>
-          <View style={styles.digits}>
-            {digits.map((digit, index) => {
-              return (
-                <TextInput
-                  autoFocus={index == 0 ? true : false}
-                  key={index}
-                  ref={refs[index]}
-                  style={[
-                    styles.inputDigits,
-                    digit !== '' && styles.filedColour,
-                  ]}
-                  value={digit}
-                  onChangeText={dig => changeDigit(dig, index)}
-                  onKeyPress={event => KeyDigits(event, index)}
-                  maxLength={1}
-                  keyboardType="numeric"
-                />
-              );
-            })}
-          </View>
-        </View>
-        <PrimaryButton
-          onPress={() => {
-            OtpValidation();
-          }}
-          Title={'Verify'}
-          altStyle={{
-            marginBottom: widthResponse ? 15 : 20,
-          }}
+      )}
+      <ImageBackground
+        resizeMode="stretch"
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          position: 'relative',
+        }}
+        source={require('../../../assets/images/background_reg.png')}>
+        <StatusBar backgroundColor={'transparent'} translucent />
+        <Animatable.Image
+          animation={'fadeInUp'}
+          source={require('../../../assets/images/bean.png')}
+          style={styles.bean}
+          resizeMode="contain"
         />
-        {/* <Pressable
-          onPressIn={() => setUnderline(true)}
-          onPressOut={() => setUnderline(false)}
-          onPress={() => {}}>
+        <Image
+          source={require('../../../assets/images/curry_leaf.png')}
+          style={styles.neam}
+          resizeMode="contain"
+        />
+        <KeyboardAwareScrollView
+          keyboardShouldPersistTaps={'always'}
+          contentContainerStyle={{
+            paddingHorizontal: 20,
+            justifyContent: 'center',
+            alignItems: 'center',
+            // paddingTop: widthResponse ? 100 : 120,
+            paddingBottom: 10,
+            flex: 1,
+          }}
+          scrollEnabled={true}
+          enableAutomaticScroll={true}
+          extraHeight={300}
+          showsVerticalScrollIndicator={false}>
+          <View
+            style={{
+              marginBottom: widthResponse ? 15 : 25,
+            }}>
+            <Animatable.Image
+              animation={'zoomIn'}
+              source={require('../../../assets/images/orange.png')}
+              resizeMode="contain"
+              style={styles.main}
+            />
+          </View>
           <Text
             style={{
-              fontFamily: appFont.rM,
-              color: appColor.white,
-              fontSize: fontScalling(2),
-              textDecorationLine: underLine ? 'underline' : 'none',
+              fontFamily: appFont.bB,
+              fontSize: fontScalling(3.5),
+              color: appColor.textWhite,
+              marginBottom: widthResponse ? 10 : 15,
             }}>
-            Resend OTP
+            otp verification
           </Text>
-        </Pressable> */}
-        {/* {seconds != 0 ? (
           <Text
             style={{
-              fontFamily: appFont.BW_Bold,
+              fontSize: fontScalling(1.8),
               color: appColor.white,
-              fontSize: fontScalling(2),
+              textAlign: 'center',
+              fontFamily: appFont.rR,
+              marginBottom: widthResponse ? 20 : 30,
             }}>
-            Your OTP expires in {formatTime(seconds)}
+            Food is fuel, not therapy.
           </Text>
-        ) : (
-          <TouchableOpacity
-            style={{elevation: 10}}
-            onPress={() => apiCall('')}
-            activeOpacity={0.5}>
+          <Text
+            style={{
+              fontSize: fontScalling(1.8),
+              color: appColor.white,
+              textAlign: 'center',
+              fontFamily: appFont.rR,
+              marginBottom: widthResponse ? 20 : 30,
+            }}>
+            Cras eros ligula, venenatis et consequat sed, efficitur non sem. In
+            quis sapien
+          </Text>
+          <View style={{marginBottom: widthResponse ? 20 : 30}}>
+            <View style={styles.digits}>
+              {digits.map((digit, index) => {
+                return (
+                  <TextInput
+                    autoFocus={index == 0 ? true : false}
+                    key={index}
+                    ref={refs[index]}
+                    style={[
+                      styles.inputDigits,
+                      digit !== '' && styles.filedColour,
+                    ]}
+                    value={digit}
+                    onChangeText={dig => changeDigit(dig, index)}
+                    onKeyPress={event => KeyDigits(event, index)}
+                    maxLength={1}
+                    keyboardType="numeric"
+                  />
+                );
+              })}
+            </View>
+          </View>
+          <PrimaryButton
+            onPress={() => {
+              OtpValidation();
+            }}
+            Title={'Verify'}
+            altStyle={{
+              marginBottom: widthResponse ? 15 : 20,
+            }}
+          />
+          {timing != 0 ? (
             <Text
               style={{
-                color: '#f3b652',
-                elevation: 5,
-                // textTransform: 'uppercase',
+                fontFamily: appFont.BW_Bold,
+                color: appColor.white,
+                fontSize: fontScalling(2),
               }}>
-              Resend OTP
+              {timing}
             </Text>
-          </TouchableOpacity>
-        )} */}
-        {timing != 0 ? (
-          <Text
-            style={{
-              fontFamily: appFont.BW_Bold,
-              color: appColor.white,
-              fontSize: fontScalling(2),
-            }}>
-            {timing}
-          </Text>
-        ) : (
-          <TouchableOpacity
-            style={{elevation: 10}}
-            onPress={() => apiCall('')}
-            activeOpacity={0.5}>
-            <Text
-              style={{
-                color: '#f3b652',
-                elevation: 5,
-                // textTransform: 'uppercase',
-              }}>
-              Resend OTP
-            </Text>
-          </TouchableOpacity>
-        )}
-      </KeyboardAwareScrollView>
-    </ImageBackground>
+          ) : (
+            <TouchableOpacity
+              style={{elevation: 10}}
+              onPress={() => apiCall('')}
+              activeOpacity={0.5}>
+              <Text
+                style={{
+                  color: '#f3b652',
+                  elevation: 5,
+                  // textTransform: 'uppercase',
+                }}>
+                Resend OTP
+              </Text>
+            </TouchableOpacity>
+          )}
+        </KeyboardAwareScrollView>
+      </ImageBackground>
+    </>
   );
 };
 

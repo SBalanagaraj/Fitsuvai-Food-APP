@@ -4,7 +4,6 @@ import {
   Capitalize,
   fontScalling,
   formatedDate,
-  formatedDates,
   print,
   scrnWidth,
   widthResponse,
@@ -17,6 +16,7 @@ import {CalendarList} from 'react-native-calendars';
 import PrimaryButton from '../Buttons/PrimaryButton';
 import {useSelector} from 'react-redux';
 import {useShowToast} from '../Toast/ToastAlert';
+import moment from 'moment';
 
 const DatePick = ({
   title,
@@ -28,13 +28,12 @@ const DatePick = ({
   value,
   altStyle,
   singleSelection = false,
-  chooseDates,
+  chooseDates = false,
   maxDate = Infinity,
   onPress = () => {},
-  selectedDates = [],
-  children = null,
+  selectedDates = [], //@@
+  children = null, //@@
 }) => {
-  // states
   const [modalVisible, setModalVisible] = useState(false);
   const [validDate, setValidDate] = useState(false);
   const [dates, setDates] = useState({
@@ -45,15 +44,18 @@ const DatePick = ({
   const showToast = useShowToast();
   const {userSettings} = useSelector(state => state.setting);
   const holidayDates =
-    userSettings && userSettings?.HOLIDAY && userSettings?.HOLIDAY.split(',');
+    userSettings && userSettings?.HOLIDAY
+      ? userSettings?.HOLIDAY.split(',')
+      : [];
 
   const appColor = appColors();
-  const currentDate = new Date();
-  const nextDay = new Date(currentDate);
-  nextDay.setDate(currentDate.getDate() + 1);
+  const {styles} = useStyle();
+  const currentDate = new Date(); // Get the current date
+  const nextDay = new Date(currentDate); // Create a copy of the current date
+  nextDay.setDate(currentDate.getDate() + 1); // Add one day
 
-  const minimumDate = new Date(currentDate);
-  minimumDate.setDate(currentDate.getDate() + 1);
+  const minimumDate = new Date(currentDate); // Create a copy of the current date
+  minimumDate.setDate(currentDate.getDate() + 1); // Add one day
   const formatedMinDate = minimumDate.toISOString().split('T')[0];
 
   const singleDaySelection = dates.isfromDate
@@ -72,27 +74,31 @@ const DatePick = ({
 
   // singleDay and Multiple day select function
   const onDayPress = day => {
+    // console.log(day, 'day');
     const currentDates = new Date(day.dateString);
-
     if (currentDates.getDay() !== 0) {
       const selectedDate = day.dateString;
       if (singleSelection) {
         // Single date selection logic
-        setDates({
-          isfromDate: selectedDate,
-          isendDate: null,
-          MarkedDates: {
-            [selectedDate]: {
-              startingDay: true,
-              endingDay: true,
-              selected: true,
-              marked: true,
-              color: '#f4a045',
-              selectedColor: appColor.bgBlack,
-              dotColor: 'transparent',
+        if (!holidayDates.includes(selectedDate)) {
+          setDates({
+            isfromDate: selectedDate,
+            isendDate: null,
+            MarkedDates: {
+              [selectedDate]: {
+                startingDay: true,
+                endingDay: true,
+                selected: true,
+                marked: true,
+                color: holidayDates.includes(selectedDate)
+                  ? appColor.greyBack
+                  : appColor.gold,
+                selectedColor: appColor.bgBlack,
+                dotColor: 'transparent',
+              },
             },
-          },
-        });
+          });
+        }
       } else {
         // Multi-selection (range) logic
         if (!dates.isfromDate || (dates.isfromDate && dates.isendDate)) {
@@ -108,10 +114,10 @@ const DatePick = ({
                 selected: true,
                 marked: true,
                 color: holidayDates.includes(selectedDate)
-                  ? appColor.greyBack
+                  ? appColor.lightGreen
                   : appColor.gold,
                 selectedColor: holidayDates.includes(selectedDate)
-                  ? appColor.greyBack
+                  ? appColor.lightGreen
                   : appColor.gold,
                 dotColor: 'transparent',
               },
@@ -120,61 +126,57 @@ const DatePick = ({
         } else if (!dates.isendDate) {
           // Set end date and mark the range
           const range = getDateRange(dates.isfromDate, selectedDate);
+          // console.log(range, 'range')
           chooseDates(range);
           const markedRange = range.reduce((acc, date, index) => {
             acc[date] = {
               selected: true,
               marked: true,
               color: holidayDates.includes(date)
-                ? appColor.greyBack
+                ? appColor.lightGreen
                 : appColor.gold,
               selectedColor: holidayDates.includes(date)
-                ? appColor.greyBack
+                ? appColor.lightGreen
                 : appColor.gold,
               dotColor: 'transparent',
               ...(index === 0 && {startingDay: true}),
               ...(index === range.length - 1 && {endingDay: true}),
             };
+            // print(acc, 'acc');
             return acc;
           }, {});
           const key = Object.keys(markedRange).length;
           setDates(preDate => ({
             ...preDate,
-            isendDate: Object.keys(markedRange)[key - 1],
+            isendDate: Object.keys(markedRange)[key - 1], //@@
             MarkedDates: markedRange,
             endingDay: Object.keys(markedRange)[key - 1] ? true : false,
           }));
         }
       }
       if (holidayDates.includes(selectedDate)) {
-        showToast('custom', `Balck color indicates Holidays`, '', 6000);
+        showToast('custom', `Green color indicates Holidays`, '', 6000);
       }
     }
   };
 
   // Function to get date range and skip Sundays
   const getDateRange = (start, end, mDate = maxDate) => {
+    // console.log(start, 'start', end, 'end');
     const startDate = new Date(start);
     const endDate = new Date(end);
     const dateArray = [];
     let currentDate = startDate;
+
     while (currentDate <= endDate) {
       // Check if the day is Sunday (0 = Sunday)
       const holidays = currentDate.getDay() !== 0;
       if (holidays) {
         dateArray.push(currentDate.toISOString().split('T')[0]);
       }
-      print(maxDate, 'max');
-      print(
-        dateArray.filter(data => {
-          print(data, 'data');
-          return !holidayDates.includes(data);
-        }).length,
-        'arrayLength',
-      );
       if (
         dateArray.filter(data => {
-          print(data, 'data');
+          // print(data, 'data');
           return !holidayDates.includes(data);
         }).length == maxDate
       ) {
@@ -186,9 +188,9 @@ const DatePick = ({
         currentDate.setDate(currentDate.getDate() + 1);
       }
     }
-
+    // print(dateArray, 'dateArray');
     return dateArray;
-  }; //BN
+  };
 
   // when clear the date reset the calender:
   useEffect(() => {
@@ -326,8 +328,9 @@ const DatePick = ({
           flex: 1,
           justifyContent: 'center',
           alignItems: 'center',
+          zIndex: 0,
         }}
-        backdropOpacity={1}>
+        backdropOpacity={0.5}>
         <View
           style={{
             width: scrnWidth - 40,
@@ -344,13 +347,16 @@ const DatePick = ({
             justifyContent: 'center',
             backgroundColor: appColor.white,
             borderRadius: 10,
+            // paddingVertical: 20,
           }}>
+          {/* Select date */}
           <View
             style={{
               alignItems: 'center',
               justifyContent: 'space-between',
               flexDirection: 'row',
               position: 'absolute',
+              // display: 'none',
               width: scrnWidth - 80,
               top: 20,
               zIndex: 1000,
@@ -386,72 +392,131 @@ const DatePick = ({
               <Icon
                 ComponentName={'AntDesign'}
                 name={'close'}
-                size={25}
+                size={widthResponse ? 25 : 35} //@@
                 color={appColor.bgBlack}
               />
             </Pressable>
           </View>
 
-          <CalendarList
-            horizontal={true}
-            hideArrows={false}
-            scrollEnabled={false}
-            current={formattedNextDay}
-            enableSwipeMonths={true}
-            calendarStyle={{
-              borderRadius: 15,
-              backgroundColor: appColor.bgWhite,
-              paddingVertical: 10,
-              paddingTop: 50,
-              // justifyContent: 'center',
-            }}
-            calendarWidth={scrnWidth - 40}
-            theme={{
-              backgroundColor: appColor.bgWhite,
-              calendarBackground: 'transparent',
-              selectedDayBackgroundColor: appColor.bgBlack,
-              arrowColor: appColor.white,
-              arrowHeight: 150,
-              arrowWidth: 150,
-              arrowStyle: {
-                backgroundColor: appColor.bgBlack,
-                borderRadius: 10,
-                cursor: 'pointer',
-              },
-
-              selectedDotColor: appColor.themeYellow,
-              selectedDayTextColor: appColor.white,
-              monthTextColor: appColor.textBlack,
-              monthFontFamily: appFont.bB,
-              monthFontSize: fontScalling(2.5),
-              textInactiveColor: appColor.Textlightblack,
-              textDisabledColor: appColor.Textlightblack,
-              textMonthFontFamily: appFont.bB,
-              textMonthFontSize: fontScalling(2.5),
-              textSectionTitleDisabledColor: appColor.textBlack,
-              dayTextColor: appColor.textBlack,
-              textSectionTitleColor: appColor.textBlack,
-
-              'stylesheet.calendar.header': {
-                dayTextAtIndex0: {
-                  color: appColor.greyBg,
-                  backgroundColor: appColor.lightYellow,
-                  paddingHorizontal: 5,
-                  paddingVertical: 5,
+          {/* calendar */}
+          <View style={{display: 'flex'}}>
+            <CalendarList
+              horizontal={true}
+              hideArrows={false}
+              scrollEnabled={false}
+              current={formattedNextDay}
+              enableSwipeMonths={true}
+              calendarStyle={{
+                borderRadius: 15,
+                backgroundColor: appColor.bgWhite,
+                paddingVertical: 10,
+                paddingTop: widthResponse ? 50 : 70,
+                // justifyContent: 'center',
+              }}
+              disabledDaysIndexes={0}
+              calendarWidth={scrnWidth - 40}
+              theme={{
+                arrowColor: appColor.white,
+                arrowHeight: 150,
+                arrowWidth: 150,
+                arrowStyle: {
+                  backgroundColor: appColor.bgBlack,
                   borderRadius: 10,
+                  cursor: 'pointer',
                 },
-              },
-            }}
-            firstDay={7}
-            markingType="period"
-            markedDates={dates.MarkedDates}
-            onDayPress={onDayPress}
-            minDate={formatedMinDate}
-          />
+                backgroundColor: appColor.bgWhite,
+                calendarBackground: 'transparent',
+                selectedDayBackgroundColor: appColor.bgBlack,
+                selectedDotColor: appColor.themeYellow,
+                selectedDayTextColor: appColor.white,
+                monthTextColor: appColor.textBlack,
+                monthFontFamily: appFont.bB,
+                monthFontSize: fontScalling(2.5),
+                textMonthFontFamily: appFont.bB,
+                textMonthFontSize: widthResponse
+                  ? fontScalling(2.5)
+                  : fontScalling(2), //@@
+                // textInactiveColor: appColor.Textlightblack,
+                textDisabledColor: appColor.overlayBgCorousel,
+                todayTextColor: appColor.overlayBgCorousel,
+                weekVerticalMargin: widthResponse ? 7 : 20, //@@
+                textDayHeaderFontSize: fontScalling(1.4), //@@
+                textDayFontSize: fontScalling(1.8), //@@
+                textSectionTitleDisabledColor: appColor.textBlack,
+                dayTextColor: appColor.textBlack,
+                textSectionTitleColor: appColor.textBlack,
+                'stylesheet.calendar.header': {
+                  dayTextAtIndex0: styles.monthName,
+                  dayTextAtIndex1: styles.monthName,
+                  dayTextAtIndex2: styles.monthName,
+                  dayTextAtIndex3: styles.monthName,
+                  dayTextAtIndex4: styles.monthName,
+                  dayTextAtIndex5: styles.monthName,
+                  dayTextAtIndex6: styles.monthName,
+                },
+              }}
+              firstDay={7}
+              dayComponent={({date, state, marking}) => {
+                const isSunday = new Date(date.dateString).getDay() === 0;
+                const holidays = holidayDates.includes(date.dateString);
+                const disabledDays =
+                  moment(new Date()).format('YYYY-MM-DD') == date.dateString ||
+                  state === 'disabled';
+                let marked;
+                marking && (marked = marking);
+                // marked && print(marked, 'marked');
+                const borderStart = marked ? (marked.startingDay ? 100 : 0) : 6;
+                const borderEnd = marked ? (marked.endingDay ? 100 : 0) : 6;
+                const dynamicBackColor = isSunday
+                  ? appColor.ToastErrorBack
+                  : marked
+                  ? marked.color
+                  : holidays
+                  ? appColor.lightGreen
+                  : appColor.white;
+                return (
+                  <Pressable
+                    onPress={() => !disabledDays && onDayPress(date)}
+                    style={{
+                      backgroundColor: dynamicBackColor, // Highlight Sundays
+                      padding: widthResponse ? 7 : 5,
+                      width: marked ? '100%' : widthResponse ? '80%' : '40%',
+                      borderBottomStartRadius: borderStart,
+                      borderTopStartRadius: borderStart,
+                      borderBottomEndRadius: borderEnd,
+                      borderTopEndRadius: borderEnd,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      opacity: disabledDays ? 0.3 : 1,
+                    }}>
+                    <Text
+                      style={[
+                        styles.roboto_light,
+                        {
+                          color:
+                            marked && !holidays
+                              ? appColor.white
+                              : appColor.black,
+                        },
+                      ]}>
+                      {date.day}
+                    </Text>
+                  </Pressable>
+                );
+              }}
+              markingType="period"
+              markedDates={dates.MarkedDates}
+              onDayPress={onDayPress}
+              minDate={formatedMinDate}
+            />
+          </View>
+
+          {/* button and errors */}
           <View
             style={{
               position: 'absolute',
               bottom: 15,
+              // display: 'none',
               width: '100%',
               paddingHorizontal: 15,
             }}>
@@ -464,7 +529,7 @@ const DatePick = ({
                     fontSize: fontScalling(2),
                   }}>
                   {dates.isfromDate == null && dates.isendDate == null
-                    ? 'Please choose Dates'
+                    ? 'Please Choose Dates'
                     : 'Please choose end Date'}
                 </Text>
               )}
@@ -497,7 +562,7 @@ const DatePick = ({
               onPress={() => {
                 setValidDate(true);
                 singleSelection
-                  ? onChange(singleDaySelection)
+                  ? dates.isfromDate != null && onChange(singleDaySelection)
                   : onChange(
                       maxDate != Infinity && maxDate > 0
                         ? customPlanSelection
@@ -558,9 +623,15 @@ const useStyle = () => {
     },
     roboto_light: {
       fontFamily: appFont.rR,
-      fontSize: fontScalling(1.7),
-      lineHeight: fontScalling(2.2),
+      fontSize: fontScalling(1.8),
+      // lineHeight: fontScalling(2.2),
       color: appColor.textBlack,
+    },
+    monthName: {
+      paddingVertical: 5,
+      flex: 1,
+      fontFamily: appFont.bB,
+      fontSize: fontScalling(widthResponse ? 2 : 2.2),
     },
   });
 

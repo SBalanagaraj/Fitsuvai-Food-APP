@@ -14,8 +14,11 @@ import MainCard from '../../components/Card/MainCard';
 import {url} from '../../utilities/appApi';
 import {useDispatch, useSelector} from 'react-redux';
 import {useShowToast} from '../../components/Toast/ToastAlert';
-import {userSettingApi} from '../../redux/SettingSlice';
-import {setProfileData, setUserType} from '../../redux/authSlice';
+import {
+  setProfileData,
+  setUserSkipOption,
+  setUserType,
+} from '../../redux/authSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function DeleteScreen3({navigation, route}) {
@@ -44,17 +47,16 @@ export default function DeleteScreen3({navigation, route}) {
       if (feedback && feedback != '') {
         formData.append('feedback', feedback);
       }
-
-      print(formData, 'formData');
       var requestOptions = {
         method: 'POST',
         body: formData,
       };
-
       // get the response:
       const response = await fetch(url().deleteAccount, requestOptions);
       if (response.status == 200) {
         const resparse = await response.json();
+        dispatch(setUserType('guest'));
+        dispatch(setUserSkipOption(0));
         dispatch(
           setProfileData({
             userId: '',
@@ -75,7 +77,6 @@ export default function DeleteScreen3({navigation, route}) {
           }),
         );
         AsyncStorage.clear();
-        dispatch(setUserType('guest'));
         showToast(
           'success',
           resparse.success,
@@ -84,7 +85,7 @@ export default function DeleteScreen3({navigation, route}) {
         );
         TabReset(navigation);
         setTimeout(() => {
-          navigation.navigate('profile');
+          navigation.navigate('Dashboard', {screen: 'home'});
         }, 1300);
       } else {
         console.log('Delete account status code:', response.status);

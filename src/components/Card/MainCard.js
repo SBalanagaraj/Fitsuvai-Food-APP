@@ -2,13 +2,24 @@ import {View, SafeAreaView, StyleSheet} from 'react-native';
 import React from 'react';
 import appColors from '../../utilities/appColors';
 
-const MainCard = ({children, altStyle}) => {
+const MainCard = ({children, altStyle, cartBg = false}) => {
   const appColor = appColors();
   const {styles} = useStyle();
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView
+      style={[
+        styles.safeArea,
+        {backgroundColor: !cartBg ? appColor.white : appColor.cartBg},
+      ]}>
       <View style={styles.topBlack} />
-      <View style={[styles.ScrContainer, altStyle]}>{children}</View>
+      <View
+        style={[
+          styles.ScrContainer,
+          altStyle,
+          {backgroundColor: !cartBg ? appColor.white : appColor.cartBg},
+        ]}>
+        {children}
+      </View>
     </SafeAreaView>
   );
 };
@@ -23,7 +34,7 @@ const useStyle = () => {
       marginTop: -40,
       flex: 1,
       overflow: 'visible',
-      backgroundColor: appColor.bgWhite,
+      backgroundColor: appColor.cartBg,
       borderTopLeftRadius: 20,
       borderTopRightRadius: 20,
       paddingTop: 10,
@@ -33,7 +44,7 @@ const useStyle = () => {
     },
     safeArea: {
       flex: 1,
-      backgroundColor: appColor.bgWhite,
+      backgroundColor: appColor.white,
       position: 'relative',
     },
     topBlack: {

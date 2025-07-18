@@ -7,6 +7,7 @@ import {
   Keyboard,
   Platform,
   Vibration,
+  Alert,
 } from 'react-native';
 import * as Animatable from 'react-native-animatable';
 // file import:
@@ -28,27 +29,88 @@ import {appFont} from '../utilities/appFont';
 import {useDispatch, useSelector} from 'react-redux';
 import messaging from '@react-native-firebase/messaging';
 import {useNavigation} from '@react-navigation/native';
-import {
-  setBottomTabPress,
-  setPosition,
-  userSettingApi,
-} from '../redux/SettingSlice';
+import {setBottomTabPress, userSettingApi} from '../redux/SettingSlice';
 import notifee, {
   AndroidImportance,
   AndroidStyle,
   AndroidVisibility,
   EventType,
 } from '@notifee/react-native';
+import LottieView from 'lottie-react-native';
+import {Linking} from 'react-native';
 
 const Tab = createBottomTabNavigator();
 
 function CustomTabBar({state, descriptors, navigation}) {
   const appColor = appColors();
   const {cart} = useSelector(state => state.cart);
-  const {termsPage} = useSelector(state => state.title);
+  const {userSettings} = useSelector(state => state.setting);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
-  const dispatch = useDispatch();
-  // const navigation = useNavigation();
+  const width = fontScalling(30);
+
+  const allProducts =
+    userSettings &&
+    userSettings?.suggestions &&
+    userSettings?.suggestions.length > 0
+      ? userSettings?.suggestions.filter(dta => dta.type == 1)
+      : [];
+
+  // Function to handle the deep link
+  useEffect(() => {
+    const handleDeepLink = event => {
+      const {url} = event;
+      processUrl(url);
+    };
+
+    // Function to process the URL
+    const processUrl = url => {
+      if (!url) return;
+      if (url.includes('www.fitsuvai.com')) {
+        const recipeId = url.split('/').pop();
+        if (recipeId != '' && allProducts && allProducts.length > 0) {
+          const findProduct = allProducts.find(
+            data =>
+              `${data.name.split(' ').join('-').trim()}-${
+                data.size
+              }`.toLocaleLowerCase() == recipeId.toLocaleLowerCase(),
+          );
+          if (
+            findProduct &&
+            Object.keys(findProduct).length > 0 &&
+            findProduct.id
+          ) {
+            navigation.navigate('productDetail', {productId: findProduct.id});
+          }
+        } else {
+          navigation.navigate('profile');
+        }
+      }
+    };
+
+    // Get the initial URL when the app is launched from a closed state
+    const getInitialUrl = async () => {
+      const initialUrl = await Linking.getInitialURL();
+      processUrl(initialUrl);
+    };
+
+    getInitialUrl();
+
+    // Add event listener for when the app is opened from the background
+    const linkingListener = Linking.addEventListener('url', handleDeepLink);
+
+    // Cleanup the event listener on unmount
+    return () => {
+      linkingListener.remove();
+    };
+  }, [navigation]);
+
+  const handleNavigation = url => {
+    const path = url.replace(/.*?:\/\//g, '');
+    console.log(path, 'path');
+    const id = path.split('/').pop();
+    Alert.alert('Navigating', `Product Detail ID: ${id}`);
+    navigation.navigate('productDetail', {productId: id});
+  };
 
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
@@ -153,8 +215,8 @@ function CustomTabBar({state, descriptors, navigation}) {
                         iterationCount={1}
                         style={{
                           position: 'absolute',
-                          width: widthResponse ? 20 : 30, //@@
-                          height: widthResponse ? 20 : 30, //@@
+                          width: widthResponse ? 17 : 30, //@@
+                          height: widthResponse ? 17 : 30, //@@
                           borderRadius: 40,
                           backgroundColor: 'red',
                           top: widthResponse ? 6 : 10, //@@
@@ -162,7 +224,7 @@ function CustomTabBar({state, descriptors, navigation}) {
                           zIndex: 5000,
                           alignItems: 'center',
                           justifyContent: 'center',
-                          borderWidth: 0.2,
+                          borderWidth: 0.5,
                           borderColor: appColor.white,
                           elevation: 2,
                           shadowOffset: 2,
@@ -170,112 +232,162 @@ function CustomTabBar({state, descriptors, navigation}) {
                         <Text
                           style={{
                             fontFamily: appFont.bB,
-                            fontSize: fontScalling(1.8),
+                            fontSize: fontScalling(1.6),
                             color: appColor.white,
                           }}>
                           {cart.length}
                         </Text>
                       </Animatable.View>
                     )}
-                    <Icon
-                      ComponentName={
-                        route.name == 'Dashboard'
-                          ? 'AntDesign'
-                          : route.name == 'Carts'
-                          ? 'AntDesign'
-                          : route.name == 'Order'
-                          ? 'Feather'
-                          : route.name == 'Profile'
-                          ? 'FontAwesome'
-                          : route.name == 'Menu'
-                          ? 'Entypo'
-                          : null
-                      }
-                      name={
-                        route.name == 'Dashboard'
-                          ? 'home'
-                          : route.name == 'Carts'
-                          ? 'shoppingcart'
-                          : route.name == 'Order'
-                          ? 'package'
-                          : route.name == 'Profile'
-                          ? 'user-o'
-                          : route.name == 'Menu'
-                          ? 'bowl'
-                          : null
-                      }
-                      color={appColor.bgWhite}
-                      size={
-                        route.name == 'Dashboard'
-                          ? widthResponse
-                            ? 25
-                            : 30
-                          : route.name == 'Carts'
-                          ? widthResponse
-                            ? 30
-                            : 35
-                          : route.name == 'Order'
-                          ? widthResponse
-                            ? 30
-                            : 35
-                          : route.name == 'Profile'
-                          ? widthResponse
-                            ? 25
-                            : 30
-                          : route.name == 'Menu'
-                          ? widthResponse
-                            ? 25
-                            : 25
-                          : null
-                      }
-                    />
+                    {route.name == 'Menu' ? (
+                      <View
+                        style={{
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}>
+                        <LottieView
+                          autoPlay={true}
+                          loop={true}
+                          duration={10000}
+                          style={{
+                            width: 55,
+                            height: 55,
+                          }}
+                          source={require('../../assets/lottieFiles/foodMenu.json')}
+                        />
+                      </View>
+                    ) : (
+                      // </View>
+                      <Icon
+                        ComponentName={
+                          route.name == 'Dashboard'
+                            ? 'AntDesign'
+                            : route.name == 'Carts'
+                            ? 'AntDesign'
+                            : route.name == 'Order'
+                            ? 'Feather'
+                            : route.name == 'Profile'
+                            ? 'FontAwesome'
+                            : // : route.name == 'Menu'
+                              // ? 'Entypo'
+                              null
+                        }
+                        name={
+                          route.name == 'Dashboard'
+                            ? 'home'
+                            : route.name == 'Carts'
+                            ? 'shoppingcart'
+                            : route.name == 'Order'
+                            ? 'package'
+                            : route.name == 'Profile'
+                            ? 'user-o'
+                            : // : route.name == 'Menu'
+                              // ? 'bowl'
+                              null
+                        }
+                        color={appColor.bgWhite}
+                        size={
+                          route.name == 'Dashboard'
+                            ? widthResponse
+                              ? 20
+                              : 30
+                            : route.name == 'Carts'
+                            ? widthResponse
+                              ? 23
+                              : 35
+                            : route.name == 'Order'
+                            ? widthResponse
+                              ? 22
+                              : 35
+                            : route.name == 'Profile'
+                            ? widthResponse
+                              ? 20
+                              : 30
+                            : route.name == 'Menu'
+                            ? widthResponse
+                              ? 20
+                              : 25
+                            : null
+                        }
+                      />
+                    )}
                   </View>
-                  <Animatable.View
-                    duration={300}
-                    animation={
-                      isFocused
-                        ? route.name == 'Profile'
-                          ? 'slideInRight'
-                          : 'slideInLeft'
-                        : route.name == 'Profile'
-                        ? 'slideInLeft'
-                        : 'slideInRight'
-                    }
-                    style={[
-                      {
-                        left: -60,
-                        display: isFocused ? 'flex' : 'none',
-                        flex: 1,
-                        flexDirection: 'row',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        // paddingHorizontal: 25,
-                        paddingLeft: route.name != 'Profile' && 50,
-                        paddingRight: route.name == 'Profile' && 50,
-                        marginLeft: route.name == 'Profile' ? -60 : 0,
-                        marginRight: route.name != 'Profile' ? -60 : 0,
-                        zIndex: 5,
-                        height: '100%',
-                        borderRadius: 100,
-                        backgroundColor: appColor.greyBack,
-                        justifyContent: 'center',
-                        backgroundColor: isFocused
-                          ? appColor.greyBack
-                          : 'transparent',
-                      },
-                    ]}>
-                    <Text
-                      style={{
-                        // paddingTop: 5,
-                        fontFamily: appFont.bB,
-                        fontSize: fontScalling(2),
-                        letterSpacing: widthResponse ? 1.3 : 3, //@@
-                        textAlign: 'center',
-                        color: appColor.textWhite,
-                      }}>
-                      {label}
-                    </Text>
-                  </Animatable.View>
+                  {isFocused && (
+                    <Animatable.View
+                      duration={800}
+                      easing={'linear'}
+                      animation={{
+                        0: {
+                          transform: [
+                            {
+                              translateX:
+                                route.name == 'Profile' ? width : -width,
+                            },
+                          ],
+                          opacity: 0,
+                        },
+                        0.5: {
+                          transform: [
+                            {
+                              translateX:
+                                route.name == 'Profile'
+                                  ? width / 2
+                                  : -width / 2,
+                            },
+                          ],
+                          opacity: 0,
+                        },
+                        1: {
+                          transform: [
+                            {translateX: route.name == 'Profile' ? 0 : 0},
+                          ],
+                          opacity: 1,
+                        },
+                      }}
+                      // animation={
+                      //   isFocused
+                      //     ? route.name == 'Profile'
+                      //       ? 'slideInRight'
+                      //       : 'slideInLeft'
+                      //     : route.name == 'Profile'
+                      //     ? 'slideInLeft'
+                      //     : 'slideInRight'
+                      // }
+                      style={[
+                        {
+                          left: -60,
+                          display: isFocused ? 'flex' : 'none',
+                          flex: 1,
+                          flexDirection: 'row',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          // paddingHorizontal: 25,
+                          paddingLeft: route.name !== 'Profile' && 50,
+                          paddingRight: route.name === 'Profile' && 50,
+                          marginLeft: route.name === 'Profile' ? -60 : 0,
+                          marginRight: route.name !== 'Profile' ? -60 : 0,
+                          zIndex: 5,
+                          height: '100%',
+                          borderRadius: 100,
+                          backgroundColor: appColor.greyBack,
+                          backgroundColor: isFocused
+                            ? appColor.greyBack
+                            : 'transparent',
+                        },
+                      ]}>
+                      <Text
+                        style={{
+                          // paddingTop: 5,
+                          fontFamily: appFont.bB,
+                          fontSize: fontScalling(2),
+                          letterSpacing: widthResponse ? 1.3 : 3, //@@
+                          textAlign: 'center',
+                          color: appColor.textWhite,
+                        }}>
+                        {label}
+                      </Text>
+                    </Animatable.View>
+                  )}
                 </View>
               </Pressable>
             );

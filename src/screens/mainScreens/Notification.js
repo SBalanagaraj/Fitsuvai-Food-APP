@@ -10,7 +10,9 @@ import {
 import ToggleButton from '../../components/Buttons/ToggleButtons';
 import {
   arrayLength,
+  convert12HrTimeFormat,
   fontScalling,
+  formatDate,
   print,
   scrnHeight,
   scrnWidth,
@@ -76,6 +78,7 @@ const Notify_card = ({notify, Delete_Notification, index, context}) => {
   };
 
   const Notify_Icon = () => {
+    const {userSettings} = useSelector(state => state.setting);
     switch (notify.type) {
       case 'offers':
         return (
@@ -122,14 +125,18 @@ const Notify_card = ({notify, Delete_Notification, index, context}) => {
       case 'all':
         return (
           <View style={[styles.notify_icon]}>
-            <Image
-              source={require('../../../assets/images/splash_logo.png')}
-              style={{
-                width: '100%',
-                height: '100%',
-              }}
-              resizeMode="contain"
-            />
+            {userSettings &&
+              userSettings?.FAVICON &&
+              userSettings?.FAVICON != '' && (
+                <Image
+                  source={{uri: userSettings?.FAVICON}}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                  }}
+                  resizeMode="contain"
+                />
+              )}
           </View>
         );
     }
@@ -162,19 +169,6 @@ const Notify_card = ({notify, Delete_Notification, index, context}) => {
             alignItems: 'center',
             marginBottom: 5,
           }}>
-          {/* {notify?.image && notify?.image != '' ? 
-            <Image
-              source={{uri:notify.image}}
-              style={{width: 20, height: 20, marginRight: 8}}
-              resizeMode="contain"
-          />
-            : 
-            <Image
-              source={require('../../../assets/images/coin.png')}
-              style={{width: 20, height: 20, marginRight: 8}}
-              resizeMode="contain"
-            />
-          } */}
           {notify?.messages && (
             <Text
               selectable={true}
@@ -196,7 +190,9 @@ const Notify_card = ({notify, Delete_Notification, index, context}) => {
               fontFamily: appFont.rR,
               color: appColor.themeYellow,
             }}>
-            {notify.created_at}
+            {`${formatDate(
+              notify.created_at.split(' ')[0],
+            )} , ${convert12HrTimeFormat(notify.created_at.split(' ')[1])}`}
           </Text>
         )}
       </View>
@@ -206,16 +202,19 @@ const Notify_card = ({notify, Delete_Notification, index, context}) => {
           style={{
             width: scrnWidth / 6,
             height: scrnWidth / 6,
-            borderRadius: 5,
+            borderRadius: 10,
             backgroundColor: appColor.greyBg,
             justifyContent: 'center',
             alignItems: 'center',
-            padding: 10,
+            overflow: 'hidden',
+            elevation: 5,
+            shadowColor: appColor.bgBlack,
+            // padding: 10,
           }}>
           {notify?.image && notify?.image != '' ? (
             <Image
               source={{uri: notify.image}}
-              resizeMode="contain"
+              resizeMode="cover"
               style={{
                 width: '100%',
                 height: '100%',

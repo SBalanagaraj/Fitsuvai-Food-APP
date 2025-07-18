@@ -10,19 +10,19 @@ import React, {useCallback, useEffect, useRef, useState} from 'react';
 import MainCard from '../../components/Card/MainCard';
 import appColors from '../../utilities/appColors';
 import {appFont} from '../../utilities/appFont';
-import {fontScalling, print, scrnWidth} from '../../utilities/helperFunction';
+import {
+  fontScalling,
+  scrnWidth,
+  widthResponse,
+} from '../../utilities/helperFunction';
 import {Icon} from '../../utilities/icon';
 import {useSelector} from 'react-redux';
 import FilterButton from '../../components/Buttons/FilterButton';
 import {FlatList} from 'react-native-gesture-handler';
 import RadioButton from '../../components/Buttons/RadioButton';
 import {url} from '../../utilities/appApi';
-import {ActivityIndicator} from 'react-native';
 import {useIsFocused} from '@react-navigation/native';
-import {
-  ManageAddressShimmer,
-  WhishlistShimmer,
-} from '../../utilities/appShimmer';
+import {ManageAddressShimmer} from '../../utilities/appShimmer';
 import LottieView from 'lottie-react-native';
 import Modal from 'react-native-modal';
 import {useShowToast} from '../../components/Toast/ToastAlert';
@@ -44,14 +44,14 @@ const ManageAddress = ({navigation, route}) => {
 
   const [checked, setChecked] = useState(0);
 
-  const routes =
-    route.params.verify == 'checkout' || route.params.verify == 'editCheckOut';
+  const routes = route?.params?.verify == 'checkout';
 
   const pullRefresh = useCallback(() => {
     setRefresh(true);
-    setAddress({});
-    apiCall();
   }, []);
+  useEffect(() => {
+    refresh && apiCall();
+  }, [refresh]);
 
   // trigger function to delete the address
   const trigDeleteAddress = delItem => {
@@ -72,17 +72,18 @@ const ManageAddress = ({navigation, route}) => {
     }
   };
 
+  // initial api call:
   useEffect(() => {
-    if (isFocus) {
-      apiCall();
-    }
-  }, [isFocus, refresh]);
+    isFocus && apiCall();
+  }, [isFocus]);
 
   // api call
 
   const apiCall = async (itemToDelete, delCall = false) => {
     try {
-      setLoad(true);
+      if (address.length == 0) {
+        setLoad(true);
+      }
       var myHeaders = new Headers();
       const formdata = new FormData();
       if (userSettings?.userInfo?.user_id) {
@@ -100,10 +101,7 @@ const ManageAddress = ({navigation, route}) => {
       if (response.status == 200) {
         const resparse = await response.json();
         if (resparse.status == 'Success') {
-          // print(resparse,"Resparse")
           setAddress(resparse.data);
-          setLoad(false);
-          setRefresh(false);
         }
         setLoad(false);
         setRefresh(false);
@@ -115,13 +113,18 @@ const ManageAddress = ({navigation, route}) => {
     }
   };
 
-  console.log(route.params.verify, 'verify');
-
   return (
     <MainCard
       altStyle={{paddingHorizontal: 10, backgroundColor: appColor.white}}>
       <Text
-        style={[styles.HeadingText, {textAlign: 'center', paddingBottom: 10}]}>
+        style={[
+          styles.HeadingText,
+          {
+            textAlign: 'center',
+            paddingBottom: 10,
+            paddingTop: widthResponse ? 7 : 15, //@@
+          },
+        ]}>
         Manage{'  '}
         <Text style={[styles.HeadingText, {color: appColor.gold}]}>
           address
@@ -129,10 +132,7 @@ const ManageAddress = ({navigation, route}) => {
       </Text>
       <Pressable
         onPress={() => {
-          navigation.navigate('myAddress', {
-            verify:
-              route.params.verify == 'checkout' ? route.params.verify : 'add',
-          });
+          navigation.navigate('myAddress', {verify: route.params.verify});
         }}
         style={[
           styles.commenStyle,
@@ -140,14 +140,14 @@ const ManageAddress = ({navigation, route}) => {
             backgroundColor: appColor.bgBlack,
             paddingVertical: 10,
             paddingHorizontal: 10,
-            borderRadius: 5,
+            borderRadius: widthResponse ? 5 : 10, //@@
             marginTop: 15,
           },
         ]}>
         <Icon
           ComponentName={'AntDesign'}
           name={'pluscircleo'}
-          size={20}
+          size={widthResponse ? 20 : 30} //@@
           color={appColor.gold}
         />
         <Text
@@ -163,7 +163,7 @@ const ManageAddress = ({navigation, route}) => {
         address && address.length > 0 ? (
           <FlatList
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{paddingBottom: 91}}
+            contentContainerStyle={{paddingBottom: widthResponse ? 91 : 140}} //@@
             data={address}
             refreshControl={
               <RefreshControl
@@ -182,19 +182,19 @@ const ManageAddress = ({navigation, route}) => {
                       ? () => {
                           setChecked(index);
                           showToast('success', 'Address is selected', 3000);
-                          setTimeout(() => {
-                            navigation.navigate('Carts', {
-                              screen: 'checkOut',
-                              params: {details: item},
-                            });
-                          }, 3000);
+                          // setTimeout(() => {
+                          navigation.navigate('Carts', {
+                            screen: 'checkOut',
+                            params: {details: item},
+                          });
+                          // }, 3000);
                         }
                       : () => {}
                   }
                   style={{
                     backgroundColor:
                       routes && index == checked
-                        ? appColor.gold
+                        ? appColor.overlayBg
                         : appColor.cartBg,
                     borderRadius: 8,
                     padding: 15,
@@ -216,7 +216,10 @@ const ManageAddress = ({navigation, route}) => {
                       {routes && (
                         <RadioButton
                           isChecked={index == checked}
-                          altStyle={{width: 28}}
+                          altStyle={{
+                            width: 28,
+                            marginRight: widthResponse ? 10 : 15, //@@
+                          }}
                         />
                       )}
                       {item.place && (
@@ -267,33 +270,29 @@ const ManageAddress = ({navigation, route}) => {
                           fontSize: fontScalling(2),
                         }}
                         onPress={() => {
+                          // console.log(address[index], 'address[index]')
                           navigation.navigate('myAddress', {
-                            verify:
-                              route.params.verify == 'checkout'
-                                ? 'editCheckOut'
-                                : 'edit',
+                            verify: 'edit',
                             editItem: address[index],
                           });
                         }}
                       />
-                      {!routes && (
-                        <Pressable
-                          style={{paddingLeft: 10}}
-                          onPress={() => {
-                            trigDeleteAddress(address[index]);
-                          }}>
-                          <Icon
-                            ComponentName={'FontAwesome6'}
-                            name={'trash-can'}
-                            size={20}
-                            color={
-                              routes && index == checked
-                                ? appColor.white
-                                : appColor.gold
-                            }
-                          />
-                        </Pressable>
-                      )}
+                      <Pressable
+                        style={{paddingLeft: 10}}
+                        onPress={() => {
+                          trigDeleteAddress(address[index]);
+                        }}>
+                        <Icon
+                          ComponentName={'FontAwesome6'}
+                          name={'trash-can'}
+                          size={widthResponse ? 20 : 30} //@@
+                          color={
+                            routes && index == checked
+                              ? appColor.white
+                              : appColor.gold
+                          }
+                        />
+                      </Pressable>
                     </View>
                   </View>
                   <View style={{paddingTop: 10}}>
@@ -337,8 +336,8 @@ const ManageAddress = ({navigation, route}) => {
                                 : appColor.black,
                           },
                         ]}>
-                        {item.flatno && item.flatno} ,{' '}
-                        {item.street && item.street} ,
+                        {item.flatno && item.flatno},{' '}
+                        {item.street && item.street},
                       </Text>
                     )}
                     {(item.city || item.pincode) && (
@@ -353,7 +352,7 @@ const ManageAddress = ({navigation, route}) => {
                           },
                         ]}>
                         {item.city && item.city} -{' '}
-                        {item.pincode && item.pincode} ,
+                        {item.pincode && item.pincode},
                       </Text>
                     )}
                     {item.state && (
@@ -367,7 +366,7 @@ const ManageAddress = ({navigation, route}) => {
                                 : appColor.black,
                           },
                         ]}>
-                        {item.state && item.state} .
+                        {item.state && item.state}.
                       </Text>
                     )}
                   </View>
@@ -376,8 +375,22 @@ const ManageAddress = ({navigation, route}) => {
             }}
           />
         ) : (
-          <View
-            style={{flex: 1, paddingTop: scrnWidth / 3, alignItems: 'center'}}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refresh}
+                onRefresh={pullRefresh}
+                colors={[appColor.themeYellow]}
+                tintColor={appColor.themeYellow}
+              />
+            }
+            contentContainerStyle={{
+              flex: 1,
+              justifyContent: 'center',
+              alignItems: 'center',
+              paddingBottom: widthResponse ? 91 : 110,
+            }}>
             <Text
               style={{
                 fontFamily: appFont.bB,
@@ -388,7 +401,7 @@ const ManageAddress = ({navigation, route}) => {
               There is <Text style={{color: appColor.gold}}> no address </Text>{' '}
               on the addressBook
             </Text>
-          </View>
+          </ScrollView>
         )
       ) : (
         <ScrollView showsVerticalScrollIndicator={false}>
@@ -426,7 +439,7 @@ const ManageAddress = ({navigation, route}) => {
             style={{
               width: scrnWidth / 2,
               height: scrnWidth / 2.5,
-              marginTop: -35,
+              // marginTop: -35,
             }}
             source={require('../../../assets/lottieFiles/trash_1.json')}
             loop={false}
@@ -506,7 +519,7 @@ const useStyles = () => {
       fontFamily: appFont.bB,
       fontSize: fontScalling(3),
       color: appColor.black,
-      paddingBottom: 5,
+      paddingBottom: widthResponse ? 5 : 8,
     },
 
     commenStyle: {
@@ -524,7 +537,7 @@ const useStyles = () => {
       fontFamily: appFont.rM,
       fontSize: fontScalling(1.5),
       color: appColor.black,
-      marginBottom: 3,
+      marginBottom: widthResponse ? 3 : 6,
     },
   });
 

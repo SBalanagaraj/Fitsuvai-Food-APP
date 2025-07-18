@@ -1,9 +1,7 @@
 import {
-  ActivityIndicator,
   FlatList,
   Image,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -40,8 +38,12 @@ import BallWithSpin from '../../components/AnimatedStyle/BallWithSpin';
 import {useIsFocused} from '@react-navigation/native';
 import {useShowToast} from '../../components/Toast/ToastAlert';
 import {OverviewShimmer} from '../../utilities/appShimmer';
-import {useSelector} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import LottieView from 'lottie-react-native';
+import {setVegToggle} from '../../redux/SettingSlice';
+import * as Animatable from 'react-native-animatable';
+import Toggle from '../../components/Buttons/Toggle';
+import {BottomSheetScrollView} from '@gorhom/bottom-sheet';
 
 const ProductOverView = ({route, navigation}) => {
   const {context, name, productId, catId} = route.params;
@@ -49,6 +51,7 @@ const ProductOverView = ({route, navigation}) => {
   const textFocus = useRef(null);
   const isFocus = useIsFocused();
   const showToast = useShowToast();
+  const dispatch = useDispatch();
 
   // states
   const [filterModal, setFilterModal] = useState(false);
@@ -207,12 +210,12 @@ const ProductOverView = ({route, navigation}) => {
       }
       formData.append('start', categories == 'catId' ? 0 : altStart);
 
-      // filtering price formDatas
-      // if (ranges[1] != 100000 && categories != 'catId') {
-      //   //@@
-      //   formData.append('price_range', ranges.join(','));
-      // }
       formData.append('veg_filter', vegToggle ? 1 : 0);
+      // filtering price formDatas
+      if (ranges[1] != 100000 && categories != 'catId') {
+        //@@
+        formData.append('price_range', ranges.join(','));
+      }
       // sorting formDatas:
       //note: isSortBy state is not update suddenly so create the sorting variable.
       let sorting = (sort || sort == 0) && sort != -1 ? sort : isSortBy;
@@ -242,8 +245,6 @@ const ProductOverView = ({route, navigation}) => {
       arrayLength(selectFilters.fragrance) &&
         categories != 'catId' &&
         formData.append('fragrance', selectFilters.fragrance.join(','));
-
-      // print(formData, 'formData in overView---');
 
       var requestOptions = {
         method: 'POST',
@@ -455,7 +456,12 @@ const ProductOverView = ({route, navigation}) => {
   };
 
   return (
-    <MainCard altStyle={{paddingHorizontal: 10}}>
+    <MainCard
+      cartBg={true}
+      altStyle={{
+        paddingHorizontal: 10,
+        paddingTop: 40,
+      }}>
       {load ? (
         <ScrollView showsVerticalScrollIndicator={false}>
           <OverviewShimmer />
@@ -467,9 +473,10 @@ const ProductOverView = ({route, navigation}) => {
             style={{
               flexDirection: 'row',
               justifyContent: 'space-between',
-              alignItems: 'center',
-              paddingBottom: 10,
+              alignItems: 'flex-end',
+              paddingBottom: 15,
               paddingHorizontal: 5,
+              marginTop: -35,
             }}>
             <View
               style={{
@@ -477,10 +484,10 @@ const ProductOverView = ({route, navigation}) => {
                 justifyContent: 'space-between',
                 alignItems: 'center',
               }}>
-              {(filters?.fragrance?.length > 0 ||
-                (filters && filters?.base_flavor?.length > 0) ||
-                (filters && filters?.base_ingredient?.length > 0) ||
-                rangeBoundry[1] != 0) && (
+              {filters?.fragrance?.length > 0 ||
+              (filters && filters?.base_flavor?.length > 0) ||
+              (filters && filters?.base_ingredient?.length > 0) ||
+              rangeBoundry[1] != 0 ? (
                 <FilterButton
                   onPress={() => {
                     setFilterModal(true);
@@ -490,7 +497,16 @@ const ProductOverView = ({route, navigation}) => {
                   title={'Filters'}
                   ICN={'FontAwesome6'}
                   IN={'sliders'}
-                  altStyle={{marginRight: 10}}
+                  altStyle={{marginRight: 6}}
+                />
+              ) : (
+                <FilterButton
+                  onPress={() => {}}
+                  btnName={btnName}
+                  title={'Filters'}
+                  ICN={'FontAwesome6'}
+                  IN={'sliders'}
+                  altStyle={{marginRight: 6}}
                 />
               )}
               <FilterButton
@@ -502,6 +518,7 @@ const ProductOverView = ({route, navigation}) => {
                 title={'Sort by'}
                 ICN={'Octicons'}
                 IN={'sort-desc'}
+                altStyle={{marginRight: 6}}
               />
             </View>
             <FilterButton
@@ -514,10 +531,62 @@ const ProductOverView = ({route, navigation}) => {
                 }
               }}
               btnName={btnName}
-              title={'Request Food'}
+              title={'Req Food'}
               ICN={'AntDesign'}
               IN={'message1'}
             />
+            <Animatable.View
+              animation={'zoomIn'}
+              duration={400}
+              style={{
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderColor: appColor.borderColor,
+                marginRight: 20,
+                paddingHorizontal: 3,
+                // borderWidth: 1,
+                borderRadius: 15,
+                marginLeft: 5,
+                paddingVertical: 2,
+                // backgroundColor: appColor.borderColor,
+              }}>
+              <Text
+                style={{
+                  color: vegToggle ? appColor.gold : appColor.textGrey,
+                  fontFamily: appFont.bB,
+                  fontSize: fontScalling(1.8),
+                  paddingBottom: 5,
+                }}>
+                Veg{' '}
+                <Text
+                  style={{
+                    color: !vegToggle ? appColor.gold : appColor.textGrey,
+                    fontFamily: appFont.bB,
+                    fontSize: fontScalling(1.8),
+                    paddingBottom: 5,
+                  }}>
+                  Mode
+                </Text>
+              </Text>
+
+              <Toggle
+                type="green"
+                isActive={vegToggle}
+                onPress={() => {
+                  dispatch(setVegToggle(!vegToggle));
+                }}
+                style={{
+                  borderRadius: 15,
+                  backgroundColor: appColor.white,
+                  paddingHorizontal: 4,
+                  paddingRight: 8,
+                  paddingVertical: 6,
+                  elevation: 0.5,
+                  borderWidth: 1,
+                  borderColor: appColor.lightGreyLine,
+                }}
+              />
+            </Animatable.View>
           </View>
           {/* Product List */}
           {productOverView && arrayLength(productOverView?.data) ? (
@@ -613,8 +682,10 @@ const ProductOverView = ({route, navigation}) => {
               setBtnName('');
               setFilterModal(false);
             }}>
-            <ScrollView
+            <BottomSheetScrollView
+              nestedScrollEnabled={true}
               showsVerticalScrollIndicator={false}
+              horizontal={false}
               contentContainerStyle={{
                 // justifyContent: 'center',
                 paddingHorizontal: 20,
@@ -846,15 +917,15 @@ const ProductOverView = ({route, navigation}) => {
                   </View>
                 </>
               )}
-              {(filters?.fragrance?.length > 0 ||
-                (filters && filters?.base_flavor?.length > 0) ||
-                (filters && filters?.base_ingredient?.length > 0) ||
-                rangeBoundry[1] != 0) && (
-                <View style={{paddingTop: 40}}>
-                  <PrimaryButton Title={'FILTER'} onPress={handleFilter} />
-                </View>
-              )}
-            </ScrollView>
+            </BottomSheetScrollView>
+            {(filters?.fragrance?.length > 0 ||
+              (filters && filters?.base_flavor?.length > 0) ||
+              (filters && filters?.base_ingredient?.length > 0) ||
+              rangeBoundry[1] != 0) && (
+              <View style={{paddingBottom: 20, paddingTop: 5}}>
+                <PrimaryButton Title={'FILTER'} onPress={handleFilter} />
+              </View>
+            )}
           </ModalBottomSheet>
 
           {/* Sort BottomSheet */}

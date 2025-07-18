@@ -1,7 +1,59 @@
-import {Dimensions, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  FlatList,
+} from 'react-native';
 import SkeletonPlaceholder from 'react-native-skeleton-placeholder';
 import {fontScalling, scrnWidth, widthResponse} from './helperFunction';
 import appColors from './appColors';
+export const MenuShimmer = () => {
+  const {width} = Dimensions.get('window');
+  const appColor = appColors();
+  const {styles} = useStyle();
+
+  const shimmerData = Array.from({length: 12});
+
+  return (
+    <FlatList
+      data={shimmerData}
+      keyExtractor={(_, index) => index.toString()}
+      numColumns={3}
+      contentContainerStyle={{paddingVertical: 10}}
+      scrollEnabled={false}
+      renderItem={() => (
+        <SkeletonPlaceholder
+          borderRadius={4}
+          angle={90}
+          speed={500}
+          highlightColor={appColor.gold}>
+          <View
+            style={{
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginVertical: 10,
+              marginRight: 10,
+              marginBottom: 5,
+              width: width / 3 - 20,
+              height: width / 3,
+              borderRadius: 10,
+              borderWidth: 3,
+              borderColor: appColor.borderColor,
+              padding: 7,
+            }}>
+            <View style={{width: 70, height: 70, borderRadius: 50}} />
+            <View
+              style={{width: 70, height: 15, borderRadius: 5, marginBottom: 10}}
+            />
+          </View>
+        </SkeletonPlaceholder>
+      )}
+    />
+  );
+};
 
 export const DashShimmer = () => {
   const {width, height} = Dimensions.get('window');
@@ -2907,7 +2959,7 @@ export const SubscriptionOverviewShimmer = () => {
             borderRadius: 100,
           }}
         />
-<View
+        <View
           style={{
             marginBottom: 13,
             height: fontScalling(3.5),
@@ -2955,7 +3007,6 @@ export const SubscriptionOverviewShimmer = () => {
     </SkeletonPlaceholder>
   );
 };
-
 
 const useStyle = () => {
   const appColor = appColors();
@@ -3015,7 +3066,7 @@ const useStyle = () => {
       borderRadius: 10,
     },
     hFlex: {flexDirection: 'row', alignItems: 'center'},
-    pad: {padding: 10, borderBottomWidth: 1, borderColor: appColor.greyBg}
+    pad: {padding: 10, borderBottomWidth: 1, borderColor: appColor.greyBg},
   });
   return {styles};
 };

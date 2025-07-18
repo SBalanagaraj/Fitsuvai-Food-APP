@@ -1,10 +1,9 @@
 import {
   View,
   StyleSheet,
-  Image,
   FlatList,
-  ImageBackground,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import React, {useState, useEffect, useCallback} from 'react';
 import appColors from '../../utilities/appColors';
@@ -23,14 +22,19 @@ import PrimaryButton from '../../components/Buttons/PrimaryButton';
 import {url} from '../../utilities/appApi';
 import HtmlView from '../../components/HtmlElement/RenderHtml';
 import {SvgCssUri} from 'react-native-svg';
+import FastImage from 'react-native-fast-image';
+import {useNavigation} from '@react-navigation/native';
+import {useSelector} from 'react-redux';
 
 const AboutUs = () => {
   const appColor = appColors();
-
+  const navigation = useNavigation();
   // state:
   const [aboutUs, setAboutUs] = useState({});
   const [load, setLoad] = useState(false);
   const [refresh, setRefresh] = useState(false);
+
+  const {AppContents} = useSelector(state => state.setting);
 
   // initial api & pagination:
   useEffect(() => {
@@ -81,8 +85,6 @@ const AboutUs = () => {
     }
   };
 
-  // print(aboutUs, 'aboutUs');
-
   return (
     <MainOverflowCard
       borderRadius={40}
@@ -93,19 +95,19 @@ const AboutUs = () => {
         <>
           {/* banner img */}
           {aboutUs.image1 && aboutUs.image1 != '' && (
-            <Image
-              source={{uri: aboutUs.image1}}
+            <FastImage
+              source={{priority: 'high', uri: aboutUs.image1}}
               style={{
                 height: scrnWidth / 1.8,
                 borderRadius: 20,
                 backgroundColor: appColor.borderColor,
-                marginBottom: 15,
+                // marginBottom: 15,
               }}
             />
           )}
           {/* title */}
           {aboutUs.heading1 && aboutUs.heading1 != '' && (
-            <HtmlView url={aboutUs.heading1} padding={40} />
+            <HtmlView url={aboutUs.heading1} padding={20} />
           )}
           {/* description */}
           {aboutUs.content1 && aboutUs.content1 != '' && (
@@ -116,7 +118,7 @@ const AboutUs = () => {
             <FlatList
               data={aboutUs.subContentArray}
               numColumns={2}
-              style={{marginBottom: widthResponse ? 30 : 40}}
+              // style={{marginBottom: widthResponse ? 30 : 40}}
               showsVerticalScrollIndicator={false}
               scrollEnabled={false}
               keyExtractor={(data, index) => index}
@@ -126,23 +128,24 @@ const AboutUs = () => {
                     key={i}
                     style={{
                       width: '50%',
-                      paddingRight: '5%',
                     }}>
                     {/* logo */}
                     {item.sub_content_image && item.sub_content_image != '' && (
                       <View
-                        style={{
-                          width: (scrnWidth - 48) / 6,
-                          height: (scrnWidth - 48) / 6,
-                        }}>
+                        style={
+                          {
+                            // width: (scrnWidth - 48) / 6,
+                            // height: (scrnWidth - 48) / 6,
+                          }
+                        }>
                         {item?.sub_content_image
                           .split('.')
                           .pop()
                           .toUpperCase() == 'SVG' ? (
                           <SvgCssUri
                             fill={appColor.black}
-                            width={(scrnWidth - 48) / 6}
-                            height={(scrnWidth - 48) / 6}
+                            width={(scrnWidth - 48) / 8}
+                            height={(scrnWidth - 48) / 8}
                             uri={item?.sub_content_image}
                             onError={error => {
                               console.error('Failed to load SVG:', error);
@@ -155,7 +158,7 @@ const AboutUs = () => {
                           'JPG' ||
                           'JPEG' ||
                           'WEBG' ? (
-                          <Image
+                          <FastImage
                             style={{
                               width: '100%',
                               height: '100%',
@@ -181,17 +184,32 @@ const AboutUs = () => {
               left: -23,
             }}>
             {/* explore */}
-            <ImageBackground
-              source={require('../../../assets/images/abt_exp_back.png')}
+            <View
               style={{
                 width: '100%',
-                marginBottom: 10,
+                paddingHorizontal: 10,
+                height: scrnHeight / 3.5,
               }}>
-              <View
+              {AppContents?.about_image && (
+                <FastImage
+                  resizeMode="cover"
+                  style={{
+                    ...StyleSheet.absoluteFillObject,
+                    marginHorizontal: 15,
+                    marginBottom: 20,
+                    borderRadius: 10,
+                    borderWidth: 1,
+                  }}
+                  source={{uri: AppContents?.about_image}}
+                />
+              )}
+              <ScrollView
+                showsVerticalScrollIndicator={true}
+                nestedScrollEnabled={true}
                 style={{
-                  paddingHorizontal: 24,
-                  paddingVertical: widthResponse ? 30 : 45,
                   width: '65%',
+                  paddingLeft: 20,
+                  marginBottom: 30,
                 }}>
                 {/* title */}
                 {aboutUs.heading2 && aboutUs.heading2 != '' && (
@@ -212,31 +230,34 @@ const AboutUs = () => {
                 {/* btn */}
                 <PrimaryButton
                   Title={'Shop now'}
+                  onPress={() => {
+                    navigation.navigate('Menu', {screen: 'menu'});
+                  }}
                   altStyle={{
                     flex: 0,
                     paddingHorizontal: 40,
                     paddingVertical: 6,
                   }}
                 />
-              </View>
-            </ImageBackground>
+              </ScrollView>
+            </View>
             {/* special food */}
             <View
               style={{
-                backgroundColor: appColor.greyBg,
+                // backgroundColor: appColor.greyBg,
                 width: '100%',
-                paddingBottom: 30,
-                paddingHorizontal: 24,
+                // paddingBottom: 30,
+                paddingHorizontal: 10,
               }}>
               {aboutUs.image3 && aboutUs.image3 != '' && (
-                <Image
+                <FastImage
                   resizeMode="contain"
-                  source={{uri: aboutUs.image3}}
+                  source={{priority: 'high', uri: aboutUs.image3}}
                   style={{
                     height: scrnWidth / 2,
                     borderRadius: 20,
-                    backgroundColor: appColor.borderColor,
-                    marginBottom: 15,
+                    // backgroundColor: appColor.borderColor,
+                    // marginBottom: 15,
                   }}
                 />
               )}

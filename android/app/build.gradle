@@ -2,6 +2,8 @@ apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 apply plugin: 'com.google.gms.google-services'
+// apply plugin: 'react-native-google-place-picker'
+
 // apply from: file("../../node_modules/react-native-vector-icons/fonts.gradle")
 
 /**
@@ -60,6 +62,7 @@ react {
  * Set this to true to Run Proguard on Release builds to minify the Java bytecode.
  */
 def enableProguardInReleaseBuilds = false
+// def enableSeparateBuildPerCPUArchitecture = true
 
 /**
  * The preferred build flavor of JavaScriptCore (JSC)
@@ -73,6 +76,13 @@ def enableProguardInReleaseBuilds = false
  * this variant is about 6MiB larger per architecture than default.
  */
 def jscFlavor = 'org.webkit:android-jsc-intl:+'
+
+
+// this code will split seperate architucture
+// def reactNativeArchitectures() {
+//     def value = project.getProperties().get("reactNativeArchitectures")
+//     return value ? value.split(",") : ["armeabi-v7a", "x86", "x86_64", "arm64-v8a"]
+// }
 
 android {
     ndkVersion rootProject.ext.ndkVersion
@@ -89,6 +99,14 @@ android {
         // image Crop Picker
         vectorDrawables.useSupportLibrary = true
     }
+    //   splits {
+    //     abi {
+    //         reset()
+    //         enable enableSeparateBuildPerCPUArchitecture
+    //         universalApk true  // If true, also generate a universal APK
+    //         include (*reactNativeArchitectures())
+    //     }
+    // }
     signingConfigs {
         debug {
             storeFile file('debug.keystore')
@@ -125,6 +143,7 @@ dependencies {
     implementation project(':react-native-splash-screen')
     implementation("com.facebook.react:react-android")
     implementation project(':react-native-vector-icons')
+    implementation project(':react-native-screenshot-prevent')
    
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")
@@ -144,8 +163,8 @@ dependencies {
   // For WebP support, without animations
   implementation 'com.facebook.fresco:webpsupport:2.5.0'
     implementation project(':react-native-fs')
-
-
+// VOice Recoganize
+// implementation project(':@react-native-voice_voice')
 }
 
 apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesAppBuildGradle(project)

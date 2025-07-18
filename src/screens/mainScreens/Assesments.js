@@ -1,6 +1,7 @@
 import {
   ActivityIndicator,
   BackHandler,
+  FlatList,
   Pressable,
   StyleSheet,
   Text,
@@ -29,6 +30,9 @@ import {setassesMentIds, setStepsIndex} from '../../redux/SummerySlice';
 import {url} from '../../utilities/appApi';
 import {appFont} from '../../utilities/appFont';
 import AppHeaders from '../../components/Headers/AppHeaders';
+import FastImage from 'react-native-fast-image';
+import {date} from 'yup';
+import {ScrollView} from 'react-native-gesture-handler';
 
 const Assesments = ({route}) => {
   const [progressvalue, setProgressValue] = useState(0.25);
@@ -47,6 +51,34 @@ const Assesments = ({route}) => {
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const assId = route?.params?.id ? route?.params?.id : '';
+
+  const assesmentContent = [
+    {
+      img: require('../../../assets/images/hwk5.png'),
+      content1: 'Personal',
+      content2: 'Trainer',
+    },
+    {
+      img: require('../../../assets/images/hwk1.png'),
+      content1: 'Personal',
+      content2: 'Nutritionist',
+    },
+    {
+      img: require('../../../assets/images/hwk2.png'),
+      content1: 'tasty',
+      content2: 'meals',
+    },
+    {
+      img: require('../../../assets/images/hwk3.png'),
+      content1: 'Weekly ',
+      content2: 'Health Checks',
+    },
+    {
+      img: require('../../../assets/images/hwk4.png'),
+      content1: 'Doorstep',
+      content2: 'Delivery',
+    },
+  ];
 
   //CarosalPage Spec
   const baseOptions = {
@@ -114,9 +146,6 @@ const Assesments = ({route}) => {
     goToPage(stepsIndex);
     setPageIndex(stepsIndex);
   }, [stepsIndex, triggerEdit]);
-
-  // print(stepsIndex, 'stepIndex');
-  // console.log(pageIndex, 'content');
 
   // api
   const apiCall = async () => {
@@ -236,10 +265,51 @@ const Assesments = ({route}) => {
     }
   };
 
+  const AssTopCard = ({data}) => {
+    return (
+      <View
+        style={{
+          flexDirection: 'row',
+          marginRight: 8,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+        <FastImage
+          resizeMode="contain"
+          style={{width: 35, height: 35}}
+          source={data.img}
+        />
+        <View style={{alignItems: 'flex-start', paddingHorizontal: 10}}>
+          <Text
+            style={{
+              fontFamily: appFont.bB,
+              fontSize: fontScalling(1.8),
+              paddingBottom: 3,
+              color: appColor.bgBlack,
+            }}>
+            {data.content1}
+          </Text>
+          <Text
+            style={{
+              fontFamily: appFont.bB,
+              fontSize: fontScalling(1.8),
+              color: appColor.gold,
+            }}>
+            {data.content2}
+          </Text>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <>
       {/* changes in App header */}
-      <AppHeaders title={'START YOUR MEAL'} backIconFn={() => backPress()} />
+      <AppHeaders
+        title={'START YOUR MEAL'}
+        backIconFn={() => backPress()}
+        toggleDisable={false}
+      />
       <MainCard>
         {load ? (
           <View
@@ -252,7 +322,7 @@ const Assesments = ({route}) => {
               style={{
                 height: '100%', //@@
               }}>
-              <View style={{paddingVertical: 10, alignSelf: 'center'}}>
+              <View style={{paddingVertical: 5, alignSelf: 'center'}}>
                 {assTitle && assTitle != '' && (
                   <Text
                     style={{
@@ -268,12 +338,42 @@ const Assesments = ({route}) => {
                 <Text
                   style={{
                     fontFamily: appFont.bB,
-                    color: appColor.bgBlack,
+                    color: appColor.textGrey,
                     fontSize: fontScalling(2.2),
-                    paddingVertical: 20,
+                    paddingVertical: 15,
+                    textAlign: 'center',
                   }}>
                   Welcome to Fitsuvai's Personalized Food Experience
                 </Text>
+                <View
+                  style={{
+                    height: scrnHeight / 11.5,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                  <FlatList
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{}}
+                    horizontal={true}
+                    data={assesmentContent}
+                    renderItem={({item, index}) => {
+                      return <AssTopCard key={index} data={item} />;
+                    }}
+                    keyExtractor={(item, index) => index}
+                    ItemSeparatorComponent={() => {
+                      return (
+                        <View
+                          style={{
+                            borderRightWidth: 0.6,
+                            borderColor: appColor.borderColor,
+                            marginVertical: 15,
+                            marginRight: 15,
+                          }}
+                        />
+                      );
+                    }}
+                  />
+                </View>
                 <Progress.Bar
                   progress={progressvalue}
                   width={scrnWidth - 70}

@@ -1,13 +1,4 @@
-import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  FlatList,
-  Pressable,
-  BackHandler,
-  ActivityIndicator,
-} from 'react-native';
+import {View, Text, StyleSheet, Image, FlatList, Pressable} from 'react-native';
 import React, {useEffect, useState, useRef} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import appColors from '../../utilities/appColors';
@@ -35,19 +26,24 @@ import {Icon} from '../../utilities/icon';
 import Modal from 'react-native-modal';
 import {useIsFocused} from '@react-navigation/native';
 import useCartPriceInfo from '../../Hooks/useCartPriceInfo';
-import {setBottomTabPress, userSettingApi} from '../../redux/SettingSlice';
+import {setBottomTabPress} from '../../redux/SettingSlice';
+import {url} from '../../utilities/appApi';
+import FastImage from 'react-native-fast-image';
+import HtmlView from '../../components/HtmlElement/RenderHtml';
 
 const Cart = ({navigation}) => {
   const {cart, total, deleteModal} = useSelector(state => state.cart);
-  const {userSettings, vegToggle, bottomTabPress} = useSelector(
+  const {userSettings, vegToggle, bottomTabPress, AppContents} = useSelector(
     state => state.setting,
   );
+  const {userType} = useSelector(state => state.auth);
   const isFocus = useIsFocused();
   const {calculatePriceInfo} = useCartPriceInfo();
 
   const [coins, setCoin] = useState(0);
   const [deleteIcon, setDeleteIcon] = useState(false);
   const [load, setLoad] = useState(false);
+  const [suggestionData, setSuggestionData] = useState([]);
 
   const appColor = appColors();
   const {styles} = useStyles();
@@ -56,6 +52,16 @@ const Cart = ({navigation}) => {
   const scrollRef = useRef(null);
 
   const deleteAnimRef = useRef(null);
+
+  const cartContent =
+    AppContents &&
+    AppContents?.cart_content &&
+    AppContents?.cart_content[0] &&
+    AppContents?.cart_content[0]?.value?.split('\r\n') &&
+    AppContents?.cart_content[0]?.value?.split('\r\n').length > 0
+      ? AppContents?.cart_content[0]?.value?.split('\r\n')
+      : [];
+
   //coin generator fn
   function TotalBasedCoinGenrator() {
     if (
@@ -81,10 +87,34 @@ const Cart = ({navigation}) => {
     (async () => TotalBasedCoinGenrator())();
   }, [total.totalamt]);
 
+  const apiCall = async () => {
+    try {
+      setLoad(true);
+      const requestOptions = {
+        method: 'POST',
+      };
+      const response = await fetch(url().searchSuggestion, requestOptions);
+      // print(response, 'response');
+      if (response.status == 200) {
+        const resparse = await response.json();
+        if (resparse.data.suggestions) {
+          const filterHideStatus = resparse.data.suggestions;
+          if (filterHideStatus && filterHideStatus.length > 0) {
+            setSuggestionData(filterHideStatus);
+          }
+          setLoad(false);
+        }
+      } else {
+        print(response.status, 'status code in cart API');
+      }
+    } catch (error) {
+      console.log(error, 'error api in Cart screen');
+    }
+  };
+
   useEffect(() => {
     if (isFocus) {
-      setLoad(true);
-      dispatch(userSettingApi());
+      apiCall();
     }
     if (!isFocus) {
       calculatePriceInfo(
@@ -105,12 +135,12 @@ const Cart = ({navigation}) => {
   useEffect(() => {
     if (
       cart.length > 0 &&
-      userSettings.suggestions &&
-      userSettings.suggestions.length > 0
+      suggestionData &&
+      suggestionData.length > 0
       // &&isFocus
     ) {
       const matchedProducts = cart.filter(item =>
-        userSettings.suggestions.some(suggestion =>
+        suggestionData.some(suggestion =>
           vegToggle
             ? suggestion.id === item.id &&
               suggestion.hide_status !== '0' &&
@@ -119,15 +149,8 @@ const Cart = ({navigation}) => {
         ),
       );
       dispatch(setCart(matchedProducts));
-      setTimeout(() => {
-        setLoad(false);
-      }, 1000);
-    } else {
-      setTimeout(() => {
-        setLoad(false);
-      }, 1000);
     }
-  }, [userSettings.suggestions, vegToggle]);
+  }, [suggestionData, vegToggle]);
 
   const onPressTouch = () => {
     dispatch(setBottomTabPress(0));
@@ -166,7 +189,7 @@ const Cart = ({navigation}) => {
               <Text
                 style={[
                   styles.HeadingText,
-                  {textAlign: 'center', marginTop: -50, marginBottom: 15},
+                  {textAlign: 'center', marginTop: -50},
                 ]}>
                 <Text style={{color: appColor.gold}}>{cart.length + '  '}</Text>
                 items in your cart
@@ -200,21 +223,23 @@ const Cart = ({navigation}) => {
                             flexDirection: 'row',
                           }}>
                           <Animatable.View
-                            animation={'fadeInLeft'}
-                            duration={600}
-                            delay={300 * index}
                             style={{
                               width: scrnWidth / 5,
                               height: scrnWidth / 5,
                               borderRadius: 10,
                               overflow: 'hidden',
                               backgroundColor: appColor.cardbg,
-                              // padding: 10,
                             }}>
-                            <Image
+                            <FastImage
                               resizeMode="cover"
                               style={{width: '100%', height: '100%'}}
-                              source={{uri: item.image}}
+                              source={{
+                                priority: FastImage.priority.high,
+                                uri:
+                                item.image && item.image != ''
+                                    ? item.image
+                                    : item.main_image,
+                              }}
                             />
                           </Animatable.View>
                           <Animatable.View
@@ -227,12 +252,12 @@ const Cart = ({navigation}) => {
                             <Text
                               style={[
                                 styles.HeadingText,
-                                {fontSize: fontScalling(2.2)},
+                                {fontSize: fontScalling(2)},
                               ]}>
                               {item.name}
                             </Text>
                             <Text style={styles.normalText}>
-                              Quantity : {item.quantity}
+                              Qty : {item.quantity}
                             </Text>
                             <Text style={styles.price}>
                               {currencyConvertor(item.offer, 2)}
@@ -269,74 +294,109 @@ const Cart = ({navigation}) => {
                   }}
                   ListFooterComponent={() => {
                     return (
-                      <View
-                        style={{
-                          backgroundColor: appColor.cardbg,
-                          paddingVertical: 30,
-                        }}>
-                        {total.totalamt >
-                          userSettings?.REWARD?.maximum_amount && (
-                          <View
-                            style={{
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              flexDirection: 'row',
-                            }}>
-                            <Text
-                              style={{
-                                textAlign: 'center',
-                                paddingBottom: 10,
-                                paddingLeft: 5,
-                                fontFamily: appFont.bB,
-                                color: appColor.bgBlack,
-                                fontSize: fontScalling(2),
-                              }}>
-                              You will receive {'  '}
-                              <Image
-                                source={{
-                                  uri: 'https://grocarto.com/assets/images/User/app/coin.png',
-                                }}
-                                style={{width: 20, height: 20}}
-                                resizeMode="contain"
-                              />
-                              <Text
+                      <>
+                        <View
+                          style={{
+                            backgroundColor: appColor.cardbg,
+                            paddingVertical: 15,
+                            marginHorizontal: 20,
+                            borderRadius: 15,
+                          }}>
+                          {userType == 'user' &&
+                            total.totalamt >
+                              userSettings?.REWARD?.maximum_amount && (
+                              <View
                                 style={{
-                                  fontFamily: appFont.bB,
-                                  color: appColor.gold,
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  flexDirection: 'row',
                                 }}>
-                                {' '}
-                                {'  ' + coins && coins + ' '}
-                              </Text>{' '}
-                              coins for this Order
-                            </Text>
-                          </View>
-                        )}
-                        {!load ? (
-                          <OrderPriceContainer data={total} km={total.kms} />
-                        ) : (
-                          <View
-                            style={{
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}>
-                            <LottieView
-                              autoPlay={true}
-                              style={{width: 150, height: 150, top: 5}}
-                              source={require('../../../assets/lottieFiles/load.json')}
-                            />
-                          </View>
-                        )}
+                                <Text
+                                  style={{
+                                    textAlign: 'center',
+                                    paddingLeft: 5,
+                                    fontFamily: appFont.bB,
+                                    color: appColor.bgBlack,
+                                    fontSize: fontScalling(2),
+                                  }}>
+                                  You will receive {'  '}
+                                  <Image
+                                    source={{
+                                      uri: 'https://grocarto.com/assets/images/User/app/coin.png',
+                                    }}
+                                    style={{width: 20, height: 20}}
+                                    resizeMode="contain"
+                                  />
+                                  <Text
+                                    style={{
+                                      fontFamily: appFont.bB,
+                                      color: appColor.gold,
+                                    }}>
+                                    {' '}
+                                    {'  ' + coins && coins + ' '}
+                                  </Text>{' '}
+                                  coins for this Order
+                                </Text>
+                              </View>
+                            )}
+                          {!load ? (
+                            <OrderPriceContainer data={total} km={total.kms} />
+                          ) : (
+                            <View
+                              style={{
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}>
+                              <LottieView
+                                autoPlay={true}
+                                style={{width: 150, height: 150, top: 5}}
+                                source={require('../../../assets/lottieFiles/load.json')}
+                              />
+                            </View>
+                          )}
+                        </View>
                         {
                           <PrimaryButton
+                            textStyle={{fontSize: fontScalling(2)}}
                             onPress={
                               load
                                 ? () => {}
                                 : () => navigation.navigate('checkOut')
                             }
                             Title={load ? 'Loading...' : 'Checkout'}
-                            altStyle={{marginHorizontal: 20}}
+                            altStyle={{marginHorizontal: 20, marginTop: 20}}
                           />
                         }
+                        <View
+                          style={{
+                            alignItems: 'flex-start',
+                            justifyContent: 'space-between',
+                            padding: 10,
+                          }}>
+                          {cartContent && (
+                            <View
+                              style={{
+                                flexDirection: 'row',
+                                alignItems: 'flex-start',
+                                justifyContent: 'space-between',
+                                paddingTop: 10,
+                                paddingHorizontal: 25,
+                              }}>
+                              {/* <Text
+                                      style={[
+                                        styles.subText,
+                                        {
+                                          paddingLeft: 15,
+                                          fontSize: fontScalling(1.8),
+                                        },
+                                      ]}>
+                                      {data}
+                                      
+                                    </Text> */}
+                              <HtmlView url={cartContent[0]} padding={40} />
+                            </View>
+                          )}
+                        </View>
                         <Pressable
                           onPress={() => navigation.navigate('home')}
                           style={{
@@ -348,20 +408,26 @@ const Cart = ({navigation}) => {
                           }}>
                           <Text
                             style={{
-                              color: appColor.black,
+                              color: appColor.Textlightblack,
                               fontFamily: appFont.bB,
-                              fontSize: fontScalling(2.5),
+                              fontSize: fontScalling(2.2),
                             }}>
                             {'Continue shopping  '}
                           </Text>
-                          <Icon
-                            ComponentName={'AntDesign'}
-                            name={'doubleright'}
-                            size={18}
-                            color={appColor.black}
-                          />
+                          <Animatable.View
+                            animation={'zoomIn'}
+                            duration={1000}
+                            iterationDelay={1000}
+                            iterationCount={'infinite'}>
+                            <Icon
+                              ComponentName={'AntDesign'}
+                              name={'doubleright'}
+                              size={18}
+                              color={appColor.Textlightblack}
+                            />
+                          </Animatable.View>
                         </Pressable>
-                      </View>
+                      </>
                     );
                   }}
                   ItemSeparatorComponent={() => {
@@ -404,7 +470,7 @@ const Cart = ({navigation}) => {
             </Text>
             <Text
               onPress={() => {
-                navigation.navigate('search');
+                navigation.navigate('Menu', {screen: 'menu'});
               }}
               style={{
                 color: appColor.black,
@@ -546,24 +612,24 @@ const useStyles = () => {
     HeadingText: {
       fontFamily: appFont.bB,
       fontSize: fontScalling(3),
-      color: appColor.black,
+      color: appColor.Textlightblack,
       paddingBottom: 5,
     },
     subText: {
       fontFamily: appFont.rM,
       fontSize: fontScalling(1.5),
-      color: appColor.black,
+      color: appColor.Textlightblack,
     },
     normalText: {
       fontFamily: appFont.rR,
-      fontSize: fontScalling(2),
-      color: appColor.black,
+      fontSize: fontScalling(1.5),
+      color: appColor.Textlightblack,
       paddingBottom: 5,
     },
     price: {
       fontFamily: appFont.bB,
-      fontSize: fontScalling(2.2),
-      color: appColor.black,
+      fontSize: fontScalling(1.8),
+      color: appColor.Textlightblack,
     },
     line: {
       width: scrnWidth,

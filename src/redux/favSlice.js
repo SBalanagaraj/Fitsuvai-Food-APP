@@ -30,7 +30,7 @@ export const listProductApi = createAsyncThunk(
         console.log(response.status, 'status-error listProductApi');
       }
     } catch (errror) {
-      console.log(errror, 'error in favList -> wishListApi');
+      // console.log(errror, 'error in favList -> wishListApi');
     }
   },
 );

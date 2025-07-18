@@ -49,7 +49,7 @@ const FilterButton = ({
                 ? appColor.gold
                 : appColor.bgBlack
               : appColor.white,
-          borderWidth: bgGolg ? 0.5 : 1.5,
+          borderWidth: bgGolg ? 0.5 : 0.6,
           borderColor:
             focus || hover
               ? bgGolg
@@ -60,7 +60,8 @@ const FilterButton = ({
               : appColor.bgBlack,
           borderRadius: bgGolg ? 4 : 7,
           paddingHorizontal: 10,
-          paddingVertical: widthResponse ? 5 : 10, //@@          flexDirection: 'row',
+          paddingVertical: widthResponse ? 5 : 10, //@@
+          // flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'center',
           flexDirection: 'row',
@@ -85,13 +86,13 @@ const FilterButton = ({
             style={[
               {
                 fontFamily: appFont.rM,
-                fontSize: fontScalling(1.8), //@@
+                fontSize: fontScalling(1.6), //@@
                 color:
                   focus || hover
                     ? bgGolg
                       ? appColor.white
                       : appColor.white
-                    : appColor.black,
+                    : appColor.textGrey,
                 paddingLeft: 5,
               },
               altTextStyle,
@@ -100,7 +101,15 @@ const FilterButton = ({
           </Text>
         </>
       ) : (
-        <ActivityIndicator color={appColor.white} />
+        <ActivityIndicator
+          color={
+            focus || hover
+              ? bgGolg
+                ? appColor.white
+                : appColor.white
+              : appColor.textGrey
+          }
+        />
       )}
     </Pressable>
   );

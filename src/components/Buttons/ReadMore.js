@@ -8,6 +8,7 @@ const ReadMore = ({
   contentStyle,
   parentStyle,
   readStyle,
+  readBg = {},
 }) => {
   const appColor = appColors();
   const [expand, setExpand] = useState(false);
@@ -46,6 +47,7 @@ const ReadMore = ({
               right: 0,
               backgroundColor: appColor.greyBg,
             },
+            readBg,
           ]}>
           <Text
             style={[

@@ -1,15 +1,13 @@
-import {
-  Text,
-  View,
-  Pressable,
-  StyleSheet,
-  Platform,
-  PermissionsAndroid,
-} from 'react-native';
+import {Text, View, Pressable, StyleSheet} from 'react-native';
 import React, {useRef, useState, useEffect} from 'react';
 import MainCard from '../../components/Card/MainCard';
 import appColors from '../../utilities/appColors';
-import {fontScalling, print, scrnWidth} from '../../utilities/helperFunction';
+import {
+  fontScalling,
+  objectLength,
+  print,
+  scrnWidth,
+} from '../../utilities/helperFunction';
 import {appFont} from '../../utilities/appFont';
 import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
 import * as yup from 'yup';
@@ -17,16 +15,15 @@ import {useForm, Controller} from 'react-hook-form';
 import {yupResolver} from '@hookform/resolvers/yup';
 import {InputText} from '../../components/InputField/InputText';
 import FilterButton from '../../components/Buttons/FilterButton';
-import Geolocation from 'react-native-geolocation-service';
 import {useShowToast} from '../../components/Toast/ToastAlert';
 import {widthResponse} from '../../utilities/helperFunction';
 import {Icon} from '../../utilities/icon';
 import PrimaryButton from '../../components/Buttons/PrimaryButton';
 import {useDispatch, useSelector} from 'react-redux';
-import {AddToaddress} from '../../redux/AddressSlice';
 import {url} from '../../utilities/appApi';
 import {
   AdminDistanceRadius,
+  getCoordinatesFromAdminLocation,
   getCoordinatesFromUserLocation,
   getPincodeFromAddress,
   getUserLocation,
@@ -59,30 +56,28 @@ const MyAddress = ({navigation, route}) => {
     nearLocation: '',
     addressType: 'home',
   });
-  const {userSettings, adminLocation} = useSelector(state => state.setting);
+  const {userSettings} = useSelector(state => state.setting);
 
   // checks for the editfunction and geting the values to edit
-  console.log(route?.params?.verify, 'verify in my Address');
   const verify =
     route?.params?.verify == 'edit' || route?.params?.verify == 'editCheckOut';
-  const {editItem} = route.params;
+  const {editItem, maps = ''} = route?.params ? route?.params : '';
 
   // initially setting the values to edit
   useEffect(() => {
     if (verify) {
-      print(editItem, 'info');
       setPersionalInfo({
-        name: editItem.name,
-        email: editItem.email,
-        mobileNumber: editItem.phone,
-        alterMobileNumber: editItem.alterphone,
-        flatNumber: editItem.flatno,
-        pincode: editItem.pincode,
-        street: editItem.street,
-        city: editItem.city,
-        state: editItem.state,
-        nearLocation: editItem.landmark,
-        addressType: editItem.place,
+        name: editItem?.name ? editItem?.name : '',
+        email: editItem?.email ? editItem?.email : '',
+        mobileNumber: editItem?.phone ? editItem?.phone : '',
+        alterMobileNumber: editItem?.alterphone ? editItem?.alterphone : '',
+        flatNumber: editItem?.flatno ? editItem?.flatno : '',
+        pincode: editItem?.pincode ? editItem?.pincode : '',
+        street: editItem?.street ? editItem?.street : '',
+        city: editItem?.city ? editItem?.city : '',
+        state: editItem?.state ? editItem?.state : '',
+        nearLocation: editItem?.landmark ? editItem?.landmark : '',
+        addressType: editItem?.place ? editItem?.place : '',
       });
     }
   }, []);
@@ -99,11 +94,13 @@ const MyAddress = ({navigation, route}) => {
         .email('Please Enter a valid Email')
         .required('Email is required'),
       mobileNumber: yup
-        .string()
+        .number()
+        .typeError('Please Enter a valid Number')
         .required('Mobile Number is required')
         .min(10, 'invalid Mobile Number'),
       alterMobileNumber: yup
         .string()
+        // .typeError('Please Enter a valid Number')
         .test(
           'empty-or-valid',
           'Invalid Mobile Number or Number already exists',
@@ -126,7 +123,7 @@ const MyAddress = ({navigation, route}) => {
       street: yup.string().required('please enter street name '),
       city: yup.string().required('please enter city name '),
       state: yup.string().required('please enter state name '),
-      landMark: yup.string().notRequired(),
+      nearLocation: yup.string().notRequired(),
     })
     .required();
 
@@ -163,7 +160,7 @@ const MyAddress = ({navigation, route}) => {
         currentValues.pincode,
       );
       if (userCoordinates) {
-        setDestination(userCoordinates);
+        setDestination(userCoordinates ? userCoordinates : '');
       }
       if (currentValues.street && currentValues.city && currentValues.state) {
         const getPincode = await getPincodeFromAddress([
@@ -191,6 +188,19 @@ const MyAddress = ({navigation, route}) => {
     }
   }, []);
 
+  // get the manual Location
+  useEffect(() => {
+    if (maps != '' && objectLength(maps)) {
+      setPersionalInfo({
+        ...currentValues,
+        street: maps.street,
+        state: maps.state,
+        city: maps.city,
+        pincode: maps.pincode,
+      });
+    }
+  }, [maps]);
+
   // get current location
   const getUserLocations = async () => {
     const userCurrentLocation = await getUserLocation();
@@ -206,8 +216,6 @@ const MyAddress = ({navigation, route}) => {
         };
       });
       setLoadCl(false);
-    } else {
-      setLoadCl(false);
     }
   };
 
@@ -217,29 +225,27 @@ const MyAddress = ({navigation, route}) => {
       isValid &&
       userSettings &&
       userSettings.RADIUS &&
-      userSettings?.SITEINFO &&
-      userSettings?.SITEINFO?.location &&
+      userSettings?.ADDRESS &&
       Object.keys(destination).length > 0
     ) {
+      const adminCoordinates = await getCoordinatesFromAdminLocation(
+        userSettings?.ADDRESS,
+      );
       const distancematrix = await AdminDistanceRadius(
-        userSettings?.SITEINFO?.location,
+        adminCoordinates,
         destination,
         userSettings?.RADIUS,
       );
-      print(distancematrix, 'distancematrix');
       if (distancematrix.status) {
-        dispatch(AddToaddress(data));
         apiCall();
-        setTimeout(() => {
-          navigation.navigate('manageAddress', {
-            verify: route.params.verify,
-          });
-        }, 800);
       } else if (!distancematrix.status) {
         showToast('error', '', 'Distance not in our Range');
       } else {
         showToast('error', 'some Thing Went Wrong!', 1500);
       }
+    }
+    if (destination == '') {
+      showToast('error', '', 'Please fill in the valid address');
     }
   };
 
@@ -264,10 +270,14 @@ const MyAddress = ({navigation, route}) => {
         header: myHeaders,
       };
       const response = await fetch(url().addressBook, requestOptions);
-      print(formdata, 'formdata');
       if (response.status == 200) {
         const resparse = await response.json();
         if (resparse.status == 'Success') {
+          setTimeout(() => {
+            navigation.navigate('manageAddress', {
+              verify: route?.params?.verify,
+            });
+          }, 100);
           showToast(
             'success',
             verify ? 'Address is updated' : 'Address is saved',
@@ -284,7 +294,14 @@ const MyAddress = ({navigation, route}) => {
   return (
     <MainCard altStyle={{paddingHorizontal: 10}}>
       <Text
-        style={[styles.HeadingText, {textAlign: 'center', paddingBottom: 10}]}>
+        style={[
+          styles.HeadingText,
+          {
+            textAlign: 'center',
+            paddingBottom: 10,
+            paddingTop: widthResponse ? 7 : 15, //@@
+          },
+        ]}>
         Enter your{' '}
         <Text style={[styles.HeadingText, {color: appColor.gold}]}>
           address
@@ -294,7 +311,7 @@ const MyAddress = ({navigation, route}) => {
         keyboardShouldPersistTaps={'always'}
         contentContainerStyle={{
           paddingTop: widthResponse ? 15 : 10,
-          paddingBottom: 90,
+          paddingBottom: widthResponse ? 90 : 140, //@@
           backgroundColor: appColor.white,
         }}
         scrollEnabled={true}
@@ -313,7 +330,7 @@ const MyAddress = ({navigation, route}) => {
                 leftIcon
                 icon={'FontAwesome'}
                 iconName={'user-o'}
-                iconSize={18}
+                iconSize={widthResponse ? 18 : 25} //@@
                 Title={'Your Name'}
                 placeholder={'Your Name'}
                 onChangeText={onChange}
@@ -339,7 +356,7 @@ const MyAddress = ({navigation, route}) => {
               autoCapitalize
               icon={'Feather'}
               iconName={'mail'}
-              iconSize={18}
+              iconSize={widthResponse ? 18 : 25} //@@
               Title={'Email address'}
               onChangeText={onChange}
               formError={errors.email}
@@ -363,7 +380,7 @@ const MyAddress = ({navigation, route}) => {
               maxLength={10}
               icon={'Feather'}
               iconName={'phone'}
-              iconSize={18}
+              iconSize={widthResponse ? 18 : 25} //@@
               Title={'Phone number'}
               onChangeText={onChange}
               formError={errors.mobileNumber}
@@ -415,34 +432,70 @@ const MyAddress = ({navigation, route}) => {
               : 'Add alternative phone number'}
           </Text>
         </Pressable>
-        <FilterButton
-          load={loadCL}
-          onPress={async () => {
-            const isGranted = await requestLocationPermission();
-            console.log(isGranted, 'isGranted');
-            if (isGranted && isGranted != 'settings') {
-              getUserLocations();
-            } else {
-              await handleLocationPermission();
-            }
-          }}
-          ICN={'FontAwesome6'}
-          IN={'location-crosshairs'}
-          title={'Current location'}
-          altTextStyle={{
-            color: appColor.white,
-            paddingLeft: 10,
-            fontFamily: appFont.bB,
-            fontSize: fontScalling(2.5),
-          }}
-          altStyle={{
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
             marginTop: 15,
-            backgroundColor: appColor.black,
-            paddingVertical: 10,
-            justifyContent: 'center',
-          }}
-          bgBlack={true}
-        />
+          }}>
+          <FilterButton
+            load={loadCL}
+            onPress={async () => {
+              const isGranted = await requestLocationPermission();
+              console.log(isGranted, 'isGranted');
+              if (isGranted && isGranted != 'settings') {
+                getUserLocations();
+              } else {
+                await handleLocationPermission();
+              }
+            }}
+            ICN={'FontAwesome6'}
+            IN={'location-crosshairs'}
+            title={'Current location'}
+            altTextStyle={{
+              color: appColor.white,
+              paddingLeft: 10,
+              fontFamily: appFont.bB,
+              fontSize: fontScalling(2.5),
+            }}
+            altStyle={{
+              flex: 1,
+              backgroundColor: appColor.black,
+              paddingVertical: 10,
+              justifyContent: 'center',
+            }}
+            bgBlack={true}
+          />
+          <FilterButton
+            onPress={() => {
+              navigation.navigate('manualLocation', {
+                page: 'myAddress',
+                verify:
+                  route?.params?.verify == 'checkout'
+                    ? route?.params?.verify
+                    : '',
+              });
+            }}
+            ICN={'FontAwesome6'}
+            IN={'map-location-dot'}
+            ICNSIZE={widthResponse ? 17 : 24}
+            title={'Choose location'}
+            altTextStyle={{
+              color: appColor.white,
+              paddingLeft: 10,
+              fontFamily: appFont.bB,
+              fontSize: fontScalling(2.5),
+            }}
+            altStyle={{
+              flex: 1,
+              marginLeft: 10,
+              backgroundColor: appColor.black,
+              paddingVertical: 10,
+              justifyContent: 'center',
+            }}
+            bgBlack={true}
+          />
+        </View>
         {/* flat & pin code  */}
         <View
           style={{
@@ -460,13 +513,13 @@ const MyAddress = ({navigation, route}) => {
                 customStyle={{flex: 1, marginRight: 10}}
                 Title="Flat number"
                 placeholder="Enter Flat Number"
+                leftIcon={true} //@@
                 icon="MaterialCommunityIcons"
                 iconName="locker"
-                iconSize={18}
+                iconSize={widthResponse ? 18 : 25} //@@
                 // autoCapitalize="none"
                 onChangeText={onChange}
                 formError={errors.flatNumber}
-                keyboardType={'numeric'}
                 onFocus={event => {
                   textFocus.current.scrollToFocusedInput(event.target);
                 }}
@@ -487,7 +540,7 @@ const MyAddress = ({navigation, route}) => {
                 placeholder="Enter your Pincode"
                 icon="MaterialCommunityIcons"
                 iconName="mailbox-up-outline"
-                iconSize={18}
+                iconSize={widthResponse ? 18 : 25} //@@
                 onChangeText={onChange}
                 formError={errors.pincode}
                 onFocus={event => {
@@ -508,9 +561,10 @@ const MyAddress = ({navigation, route}) => {
                 row
                 Title="Street"
                 placeholder="Enter Your  Street"
+                leftIcon //@@
                 icon="FontAwesome5"
                 iconName="road"
-                iconSize={20}
+                iconSize={widthResponse ? 20 : 30} //@@
                 multiline={true}
                 onChangeText={onChange}
                 formError={errors.street}
@@ -540,7 +594,7 @@ const MyAddress = ({navigation, route}) => {
                 placeholder="Enter Your state"
                 icon="MaterialCommunityIcons"
                 iconName="town-hall"
-                iconSize={15}
+                iconSize={widthResponse ? 18 : 30} //@@
                 rightIcon="AntDesign"
                 onChangeText={onChange}
                 formError={errors.state}
@@ -564,7 +618,7 @@ const MyAddress = ({navigation, route}) => {
                 placeholder="Enter Your City"
                 icon="FontAwesome5"
                 iconName="city"
-                iconSize={18}
+                iconSize={widthResponse ? 18 : 25} //@@
                 autoCapitalize="none"
                 onChangeText={onChange}
                 formError={errors.city}
@@ -579,7 +633,7 @@ const MyAddress = ({navigation, route}) => {
         {/* alter location */}
         {altLocation && (
           <Controller
-            name="landMark"
+            name="nearLocation"
             control={control}
             render={({field: {onChange, value}}) => {
               return (
@@ -596,13 +650,12 @@ const MyAddress = ({navigation, route}) => {
                   onFocus={event => {
                     textFocus.current.scrollToFocusedInput(event.target);
                   }}
-                  editable={true}
                 />
               );
             }}
           />
         )}
-        {/* add or remove alternate number */}
+        {/* add or remove landmark */}
         <Pressable
           onPress={() => setAltLocation(!altLocation)}
           style={styles.commenStyle}>
@@ -633,26 +686,30 @@ const MyAddress = ({navigation, route}) => {
           <Text style={[styles.subText, {fontSize: fontScalling(1.8)}]}>
             Select Type of Address
           </Text>
-          <FilterButton
-            onPress={() =>
-              setPersionalInfo({...currentValues, addressType: 'home'})
-            }
-            btnName={persionalInfo.addressType}
-            ICN="Ionicons"
-            IN="home-outline"
-            title={'home'}
-            bgGolg={true}
-          />
-          <FilterButton
-            onPress={() =>
-              setPersionalInfo({...currentValues, addressType: 'work'})
-            }
-            bgGolg={true}
-            btnName={persionalInfo.addressType}
-            ICN={'MaterialCommunityIcons'}
-            IN={'office-building-cog-outline'}
-            title={'work'}
-          />
+          {/* totally change the structure //@@ */}
+          <View style={{flexDirection: 'row', alignItems: 'center'}}>
+            <FilterButton
+              onPress={() =>
+                setPersionalInfo({...currentValues, addressType: 'home'})
+              }
+              altStyle={{marginRight: widthResponse ? 10 : 20}}
+              btnName={persionalInfo.addressType}
+              ICN="Ionicons"
+              IN="home-outline"
+              title={'home'}
+              bgGolg={true}
+            />
+            <FilterButton
+              onPress={() =>
+                setPersionalInfo({...currentValues, addressType: 'work'})
+              }
+              bgGolg={true}
+              btnName={persionalInfo.addressType}
+              ICN={'MaterialCommunityIcons'}
+              IN={'office-building-cog-outline'}
+              title={'work'}
+            />
+          </View>
         </View>
         <PrimaryButton
           onPress={handleSubmit(handlePersonalInfo)}

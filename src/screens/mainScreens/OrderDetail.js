@@ -6,6 +6,8 @@ import {
   fontScalling,
   scrnWidth,
   currencyConvertor,
+  objectLength,
+  scrnHeight,
   print,
 } from '../../utilities/helperFunction';
 import {appFont} from '../../utilities/appFont';
@@ -18,14 +20,18 @@ import ReactNativeBlobUtil from 'react-native-blob-util';
 import {OrderdetailShimmer} from '../../utilities/appShimmer';
 import {useShowToast} from '../../components/Toast/ToastAlert';
 import OrderPriceContainer from '../../components/Card/OrderPriceContainer';
+import {useSelector} from 'react-redux';
+import FastImage from 'react-native-fast-image';
 
 const OrderDetail = ({navigation, route}) => {
-  const {order_id, order_created} = route.params;
+  const {order_id, order_created, delivery_date, expect_delivery_time} =
+    route.params;
   const appColor = appColors();
   const showToast = useShowToast();
   const {styles} = useStyle();
   const [details, setDetails] = useState({});
   const [load, setLoad] = useState(false);
+  const {userSettings} = useSelector(state => state.setting);
 
   // customeraddress
   const address = `${details.address && details.address.hno} , ${
@@ -88,8 +94,6 @@ const OrderDetail = ({navigation, route}) => {
       if (response.status == 200) {
         const resparse = await response.json();
         if (resparse.status == 'Success') {
-          // print(resparse, 'resparse');
-
           setDetails(resparse.data);
         }
       }
@@ -104,30 +108,30 @@ const OrderDetail = ({navigation, route}) => {
     apiCall();
   }, []);
 
-  print(details, 'details');
-
   return (
     <MainOverflowCard borderRadius={40} altStyle={{paddingTop: 20}}>
       {load ? (
         <OrderdetailShimmer />
-      ) : details ? (
+      ) : objectLength(details) ? (
         <>
           <View style={{alignItems: 'center', marginTop: 10}}>
             {/* logo */}
-            <View
-              style={{
-                marginBottom: 10,
-                width: widthResponse ? 70 : 100,
-                height: widthResponse ? 70 : 100,
-              }}>
-              <Image
-                resizeMode="contain"
-                style={{width: '100%', height: '100%'}}
-                source={require('../../../assets/images/splash_logo.png')}
-              />
-            </View>
+            {userSettings?.FAVICON && (
+              <View
+                style={{
+                  marginBottom: 10,
+                  width: widthResponse ? 70 : 100,
+                  height: widthResponse ? 70 : 100,
+                }}>
+                <FastImage
+                  resizeMode="contain"
+                  style={{width: '100%', height: '100%'}}
+                  source={{uri: userSettings?.FAVICON}}
+                />
+              </View>
+            )}
             <Text style={[styles.roboto_light, {marginBottom: 10}]}>
-              <Text style={{color: appColor.Textlightblack}}>Order Id: #</Text>
+              <Text style={{color: appColor.Textlightblack}}>Order ID: #</Text>
               {order_id && order_id}
             </Text>
             {/* download pdf */}
@@ -159,7 +163,7 @@ const OrderDetail = ({navigation, route}) => {
             {details.site_data && (
               <FromToCard
                 title={details.site_data.name && details.site_data.name}
-                location={siteAddress && siteAddress}
+                // location={siteAddress && siteAddress}
                 phone={details.site_data.phone && details.site_data.phone}
                 email={details.site_data.email && details.site_data.email}
               />
@@ -188,6 +192,8 @@ const OrderDetail = ({navigation, route}) => {
                   details?.order_details?.delivery_date &&
                   details?.order_details?.delivery_date,
                 order_created,
+                delivery_date,
+                expect_delivery_time,
               });
             }}
             parentStyle={{padding: 0, paddingBottom: 20}}
@@ -226,7 +232,7 @@ const OrderDetail = ({navigation, route}) => {
                           backgroundColor: appColor.greyBg,
                         }}>
                         {item.product_image && item.product_image != '' && (
-                          <Image
+                          <FastImage
                             style={{
                               width: '80%',
                               height: '80%',
@@ -276,7 +282,6 @@ const OrderDetail = ({navigation, route}) => {
                         justifyContent: 'center',
                         alignItems: 'center',
                       }}>
-                      {print(details, 'item')}
                       {details.status_history[4].value != 0 &&
                         item.review_posted != 0 && (
                           <Pressable
@@ -376,7 +381,16 @@ const OrderDetail = ({navigation, route}) => {
           </View>
         </>
       ) : (
-        <Text>NOthing to show</Text>
+        <View
+          style={{
+            flex: 1,
+            alignItems: 'center',
+            paddingTop: scrnHeight / 2 - 100,
+          }}>
+          <Text style={[styles.baby_blk, {color: appColor.themeYellow}]}>
+            Order is empty
+          </Text>
+        </View>
       )}
     </MainOverflowCard>
   );

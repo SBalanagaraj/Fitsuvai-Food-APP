@@ -1,7 +1,12 @@
 import {FlatList, Pressable, StyleSheet, Text, View} from 'react-native';
 import React, {useEffect, useState} from 'react';
 import appColors from '../../utilities/appColors';
-import {fontScalling, print, scrnWidth} from '../../utilities/helperFunction';
+import {
+  bmiBasedValues,
+  fontScalling,
+  print,
+  scrnWidth,
+} from '../../utilities/helperFunction';
 import {appFont} from '../../utilities/appFont';
 import * as Animatable from 'react-native-animatable';
 import {useNavigation} from '@react-navigation/native';
@@ -149,7 +154,6 @@ const DrawerScreenRight = () => {
           {finalOutput &&
             finalOutput.length > 0 &&
             finalOutput.map((item, index) => {
-              print(item.value, 'value');
               return (
                 <Pressable
                   key={index}
@@ -224,20 +228,42 @@ const DrawerScreenRight = () => {
             alignItems: 'center',
             flexDirection: 'row',
             paddingHorizontal: 25,
-            paddingRight: 40,
+            // paddingRight: 40,
             paddingVertical: 20,
             marginTop: 20,
           }}>
-          <Text style={[styles.normalText, {color: appColor.white}]}>
-            Your BMI
-          </Text>
           <Text
             style={[
-              styles.subText,
-              {fontWeight: '600', color: appColor.white},
+              styles.normalText,
+              {color: appColor.white, fontSize: fontScalling(2.2)},
             ]}>
-            {typeof bmi == 'string' && bmi.length > 0 ? bmi : '---'}
+            Your BMI
           </Text>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}>
+            <Text
+              style={[
+                styles.subText,
+                {fontWeight: '600', color: appColor.white},
+              ]}>
+              {typeof bmi == 'string' && bmi.length > 0 ? `${bmi}` : '---'}
+            </Text>
+            {typeof bmi == 'string' && bmi.length > 0 && (
+              <Text
+                style={[
+                  styles.subText,
+                  {fontWeight: '600', color: bmiBasedValues(bmi).bmiColor},
+                ]}>
+                {typeof bmi == 'string' && bmi.length > 0
+                  ? ` ( ${bmiBasedValues(bmi).bmiCategory} )`
+                  : '---'}
+              </Text>
+            )}
+          </View>
         </View>
       </View>
     </View>

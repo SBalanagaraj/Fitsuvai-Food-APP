@@ -1,4 +1,4 @@
-import {View, Text, StyleSheet, TextInput, BackHandler} from 'react-native';
+import {View, Text, StyleSheet, TextInput, Pressable, BackHandler} from 'react-native';
 import React, {useEffect, useState} from 'react';
 import MainOverflowCard from '../../components/Card/MainOverFlowCard';
 import appColors from '../../utilities/appColors';
@@ -10,6 +10,8 @@ import {
   scrnWidth,
   print,
   currencyConvertor,
+  bmiBasedValues,
+  isFloat,
 } from '../../utilities/helperFunction';
 import {useForm, Controller} from 'react-hook-form';
 import * as yup from 'yup';
@@ -30,54 +32,58 @@ import {userSettingApi} from '../../redux/SettingSlice';
 import LottieView from 'lottie-react-native';
 import NutritionCard from '../../components/Card/NutritionCard';
 import {setMemberShipData} from '../../redux/SummerySlice';
+import {Icon} from '../../utilities/icon';
+import {CoupanBlock} from '../../components/Card/CouponCard';
+import Coupon from './Coupon';
 
-const Summary = ({navigation, route}) => {
-  const {styles} = useStyle();
-  const appColor = appColors();
-  const showToast = useShowToast();
+  const Summary = ({navigation, route}) => {
+    const {styles} = useStyle();
+    const appColor = appColors();
+    const showToast = useShowToast();
+ 
   const [promoCode, setpromoCode] = useState('');
-  const dispatch = useDispatch();
-
   const [paymentLoad, setPaymentLoad] = useState(false);
-
-  const {PlanPriceInfo} = UserPlanPrice();
-  const screen =
-    route && route?.params && route?.params?.screen
-      ? route?.params?.screen
-      : '';
-
-  useEffect(() => {
-    if (screen != '' && screen == 'member3') {
-      const backEvent = BackHandler.addEventListener(
-        'hardwareBackPress',
-        () => {
-          navigation.dispatch(StackActions.popToTop());
-          navigation.navigate('noTab', {screen: 'member_3'});
-          // navigation.goBack();
-          return true;
-        },
-      );
-      return () => backEvent.remove();
-    }
-  }, []);
-
-  const summary = {
-    underWeight: 18.5,
-    normalWeight: 22,
-    overWeight: 25,
-    overedWeight: 30,
-    note: 'The Delivery Timing will be as per fitsuvai Standards!',
-  };
-
-  var merchantTransactionId = '';
-  var merchantUserId = '';
-  var PaymentStatus = 'paid';
-  var paymentData = '';
-
+    const [btnDisabled, setBtnDisabled] = useState(false);
+    const dispatch = useDispatch();
+  
+    const {PlanPriceInfo} = UserPlanPrice();
+    const screen =
+      route && route?.params && route?.params?.screen
+        ? route?.params?.screen
+        : '';
+    useEffect(() => {
+      if (screen != '' && screen == 'member3') {
+        const backEvent = BackHandler.addEventListener(
+          'hardwareBackPress',
+          () => {
+            navigation.dispatch(StackActions.popToTop());
+            navigation.navigate('noTab', {screen: 'member_3'});
+            // navigation.goBack();
+            return true;
+          },
+        );
+        return () => backEvent.remove();
+      }
+    }, []);
+  
+    const summary = {
+      underWeight: 18.5,
+      normalWeight: 24.9,
+      overWeight: 22.9,
+      overedWeight: 40,
+      note: 'The Delivery Timing will be as per fitsuvai Standards!',
+    };
+  
+    var merchantTransactionId = '';
+    var merchantUserId = '';
+    var PaymentStatus = 'paid';
+    var paymentData = '';
   const {
+    planDays,
     planAmmount,
     memberShipData,
     summeryContent,
+    assesMentIds,
     finalCustomizeFood,
     customFoodDateCount,
     customFoodRenewal,
@@ -85,65 +91,140 @@ const Summary = ({navigation, route}) => {
     nutrientsList,
     expectedDishTime,
   } = useSelector(state => state.summary);
-
   const {userSettings} = useSelector(state => state.setting);
   const {userType} = useSelector(state => state.auth);
+
+
   const isFocus = useIsFocused();
 
-  // calculate the fitness function:
-  useEffect(() => {
-    const calculateFitness = memberData => {
-      let bmr =
-        10 * memberData.weight + 6.25 * memberData.height - 5 * memberData.age;
-      bmr = memberData.gender == 'Female' ? bmr - 161 : bmr + 5;
-      console.log(bmr, 'bmr');
 
-      let tef = bmr * 0.1;
-      console.log(tef, 'tef');
+// calculate the fitness function:
+useEffect(() => {
+  const calculateFitness = memberData => {
+    let bmr =
+      10 * memberData.weight + 6.25 * memberData.height - 5 * memberData.age;
+    bmr = memberData.gender == 'Female' ? bmr - 161 : bmr + 5;
 
-      let tdee = (
-        bmr *
-          (memberData.activity == 'Sedentary'
-            ? 1.2
-            : memberData.activity == 'Moderately Active'
-            ? 1.55
-            : 1.725) +
-        tef
-      ).toFixed(2);
-      console.log(tdee, 'tdee');
+    let tef = bmr * 0.1;
 
-      const calories =
-        (summeryContent[0]?.yourGoal).toLowerCase() ==
-        'Muscle gain'.toLowerCase()
-          ? [0.3, 0.5, 0.2]
-          : (summeryContent[0]?.yourGoal).toLowerCase() ==
-            'Fat Loss'.toLowerCase()
-          ? [0.4, 0.3, 0.3]
-          : (summeryContent[0]?.yourGoal).toLowerCase() ==
-            'Weight Maintanence'.toLowerCase()
-          ? [0.3, 0.4, 0.3]
-          : [0, 0, 0];
+    let tdee = (
+      bmr *
+        (memberData.activity == 'Sedentary'
+          ? 1.2
+          : memberData.activity == 'Moderately Active'
+          ? 1.55
+          : 1.725) +
+      tef
+    ).toFixed(isFloat ? 2 : 0);
 
-      let proteins = ((tdee * calories[0]) / 4).toFixed(2);
-      let carbs = ((tdee * calories[1]) / 4).toFixed(2);
-      let fats = ((tdee * calories[2]) / 9).toFixed(2);
-      console.log(proteins, carbs, fats, 'macro nutrients');
+    //   const goalNames = userSettings?.macro_formula
+    //     ? userSettings?.macro_formula?.map(data => data.goal.toLowerCase())
+    //     : [];
+    //   const index = goalNames?.findIndex(data => {
+    //     return data == (summeryContent[0]?.yourGoal).toLowerCase();
+    //   });
 
-      dispatch(
-        setMemberShipData({
-          bmr: bmr.toFixed(2),
-          tef: tef.toFixed(2),
-          tdee: tdee,
-          proteins: proteins,
-          carbs: carbs,
-          fats: fats,
-        }),
-      );
-    };
-    calculateFitness(memberShipData);
-  }, []);
+    //   const macroObj =
+    //     index != -1
+    //       ? {
+    //           protein: userSettings.macro_formula[index].protein / 100,
+    //           carbs: userSettings.macro_formula[index].carbs / 100,
+    //           fats: userSettings.macro_formula[index].fats / 100,
+    //         }
+    //       : {
+    //           protein: 0,
+    //           carbs: 0,
+    //           fats: 0,
+    //         };
 
-  // print(expectedDishTime,'edt');
+    //   let proteins = ((tdee * macroObj.protein) / 4).toFixed(2);
+    //   let carbs = ((tdee * macroObj.carbs) / 4).toFixed(2);
+    //   let fats = ((tdee * macroObj.fats) / 9).toFixed(2);
+    //   // console.log(proteins, carbs, fats, 'macro nutrients');
+
+    let ideal_protein;
+    let cdiff;
+    let cdiffaction;
+    let carb_fat_total;
+    let carb_only;
+    let fat_only;
+    let protein_cal_gm = 4;
+    let carb_cal_gm = 4;
+    let fat_cal_gm = 9;
+
+    if (tdee && summeryContent[0]?.yourGoal) {
+      const goal = summeryContent[0]?.yourGoal?.toLowerCase();
+      if (goal == 'fat loss') {
+        ideal_protein = 2.5;
+        cdiff = 500;
+        cdiffaction = 1;
+        carb_fat_total = 2.3;
+        carb_only = 1.5;
+        fat_only = 0.8;
+      } else if (goal == 'muscle gain') {
+        ideal_protein = 2;
+        cdiff = 300;
+        cdiffaction = 2;
+        carb_fat_total = 3.5;
+        carb_only = 2.5;
+        fat_only = 1;
+      } else if (goal == 'weight maintanence') {
+        ideal_protein = 1.8;
+        cdiff = 0;
+        cdiffaction = 0;
+        carb_fat_total = 2.8;
+        carb_only = 2;
+        fat_only = 0.8;
+      }
+    }
+
+    const finalTdee =
+      cdiffaction == 1
+        ? Number(tdee) - Number(cdiff)
+        : cdiffaction == 2
+        ? Number(tdee) + Number(cdiff)
+        : cdiffaction == 0
+        ? tdee
+        : 0;
+
+    let protein_c =
+      (memberShipData.weight * ideal_protein).toFixed(2) * protein_cal_gm;
+    let protein_p = (protein_c / finalTdee) * 100;
+    let carbs_p = ((100 - protein_p) / carb_fat_total) * carb_only;
+    let fats_p = ((100 - protein_p) / carb_fat_total) * fat_only;
+    let carbs_c = (finalTdee + carbs_p / 100) / carb_cal_gm;
+    let fats_c = (finalTdee + fats_p / 100) / fat_cal_gm;
+
+    let proteins = (memberShipData.weight * ideal_protein).toFixed(
+      isFloat ? 2 : 0,
+    );
+    let carbs = ((finalTdee * (carbs_p / 100)) / carb_cal_gm).toFixed(
+      isFloat ? 2 : 0,
+    );
+    let fats = ((finalTdee * (fats_p / 100)) / fat_cal_gm).toFixed(
+      isFloat ? 2 : 0,
+    );
+
+    tdee = Number(finalTdee).toFixed(isFloat ? 2 : 0);
+    //   console.log(tdee, 'tdee');
+    //   console.log(proteins, 'proteins');
+    //   console.log(carbs, 'carbs');
+    //   console.log(fats, 'fats');
+    //   console.log(ideal_protein, 'ideal_protein');
+
+    dispatch(
+      setMemberShipData({
+        bmr: bmr.toFixed(isFloat ? 2 : 0),
+        tef: tef.toFixed(isFloat ? 2 : 0),
+        tdee: tdee,
+        proteins: proteins,
+        carbs: carbs,
+        fats: fats,
+      }),
+    );
+  };
+  calculateFitness(memberShipData);
+}, []);
 
   const ifComparePrice =
     summeryContent[6].context == 'edit' &&
@@ -155,7 +236,6 @@ const Summary = ({navigation, route}) => {
     parseFloat(planAmmount.totalamt) - parseFloat(editPlanDetails.totalAmount) >
       0;
 
-  // BN
   const PriceCard = ({
     title,
     value,
@@ -203,12 +283,6 @@ const Summary = ({navigation, route}) => {
     );
   };
 
-  // reset the data:
-  useEffect(() => {
-    if (!isFocus) {
-      reset();
-    }
-  }, [isFocus]);
 
   // for phonePe payment
   const generateTransactionId = () => {
@@ -275,17 +349,20 @@ const Summary = ({navigation, route}) => {
                   apiCall(paymentData);
                 } else {
                   setPaymentLoad(false);
+                  setBtnDisabled(false);
                 }
                 console.log(resp, 'transsaction status in phonepe');
               })
               .catch(err => {
                 setPaymentLoad(false);
+                setBtnDisabled(false);
                 console.log(err, 'error in transsaction');
               });
           }
         })
         .catch(err => {
           setPaymentLoad(false);
+          setBtnDisabled(false);
           console.log(err, 'init ERROR');
         });
     }
@@ -306,8 +383,24 @@ const Summary = ({navigation, route}) => {
           <Text style={[styles.roboto_light]}>{keys}</Text>
         </View>
         <Text style={[styles.roboto_light]}>:</Text>
-        <View style={{width: '58%', paddingLeft: 15}}>
+        <View
+          style={{
+            width: '58%',
+            paddingLeft: 15,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+          }}>
           <Text style={[styles.roboto_light]}>{value}</Text>
+          {keys.toLowerCase() == 'bmi' && (
+            <Text
+              style={[
+                styles.roboto_light,
+                {color: bmiBasedValues(value).bmiColor},
+              ]}>
+              {`  ( ${bmiBasedValues(value).bmiCategory} )`}
+            </Text>
+          )}
         </View>
       </View>
     );
@@ -315,7 +408,6 @@ const Summary = ({navigation, route}) => {
 
   //apply Promo code -------------//
   const toapplyPromocode = async () => {
-    // setLoad(true);
     const fdata = new FormData();
     if (userSettings?.userInfo?.user_id) {
       fdata.append('userId', userSettings?.userInfo?.user_id);
@@ -334,7 +426,6 @@ const Summary = ({navigation, route}) => {
       let respo = await apply.json();
 
       if (respo.message) {
-        // setLoad(false);
         if (respo.percent) {
           if (planAmmount) {
             PlanPriceInfo(
@@ -357,14 +448,12 @@ const Summary = ({navigation, route}) => {
         showToast('custom', respo.message, '', 1500);
       }
     } catch (err) {
-      // setLoad(false);
-      console.error(err, 'check-err');
+      console.log(err, 'check-err');
     }
   };
-
+  
   // handlepromoCode
   const handlepromoCode = async () => {
-    console.log(promoCode, 'promoCode');
     const validpromoCode = promoCode && promoCode.trim().length != 0;
     if (!validpromoCode) {
       validpromoCode
@@ -378,6 +467,8 @@ const Summary = ({navigation, route}) => {
     }
   };
 
+  // ------------- BMI indicator Fn -------
+  // BMI Percentage
   function calculateBMIPercentage(bmi) {
     const lowerLimit = 18.5;
     const upperLimit = 30;
@@ -398,7 +489,6 @@ const Summary = ({navigation, route}) => {
   // Example usage:
   const bmi = memberShipData.bmi;
   const percentage = calculateBMIPercentage(bmi);
-
   let bmi_percentage =
     ((Number(memberShipData.bmi) - 18.5) * 100) / (30 - 18.5);
   bmi_percentage = bmi_percentage <= 100 ? bmi_percentage : 100;
@@ -435,22 +525,23 @@ const Summary = ({navigation, route}) => {
 
   // navigation:
   const onPressSend = data => {
-    if (isValid) {
+    setBtnDisabled(true);
+    if (isValid && !btnDisabled) {
       if (ifComparePrice) {
         apiCall();
       } else {
         toPhonepeSubmit();
       }
-      reset();
     }
   };
 
+  // print(customFoodRenewal, 'finalCustomizeFood');
   const transformStructure = finalCustomizeFood.reduce((acc, curr, index) => {
     const dateKey = Object.keys(curr)[0];
     const dateValue = curr[dateKey];
     const keyWord =
       summeryContent[6].context === 'edit' ? 'breakfast' : 'Breakfast';
-
+    // print(finalCustomizeFood, 'finalCustomizeFood');
     if (dateValue) {
       acc[dateKey] = {
         breakfast:
@@ -465,18 +556,20 @@ const Summary = ({navigation, route}) => {
                         id,
                         name,
                         image,
+                        main_image,
                         offer,
                         cname,
                         count,
                         offer_price,
                       }) => ({
-                        id,
-                        name,
-                        image,
-                        offer_price: offer ? offer : offer_price,
-                        category: cname,
-                        count,
-                      }),
+                          id,
+                          name,
+                          image,
+                          main_image,
+                          offer_price: offer ? offer : offer_price,
+                          category: cname,
+                          count,
+                        }),
                     )
                   : false; // Set to false if the resulting array is empty
               })()
@@ -493,18 +586,20 @@ const Summary = ({navigation, route}) => {
                         id,
                         name,
                         image,
+                        main_image,
                         offer,
                         cname,
                         count,
                         offer_price,
                       }) => ({
-                        id,
-                        name,
-                        image,
-                        offer_price: offer ? offer : offer_price,
-                        category: cname,
-                        count,
-                      }),
+                          id,
+                          name,
+                          image,
+                          main_image,
+                          offer_price: offer ? offer : offer_price,
+                          category: cname,
+                          count,
+                        }),
                     )
                   : false; // Set to false if the resulting array is empty
               })()
@@ -521,18 +616,20 @@ const Summary = ({navigation, route}) => {
                         id,
                         name,
                         image,
+                        main_image,
                         offer,
                         cname,
                         count,
                         offer_price,
                       }) => ({
-                        id,
-                        name,
-                        image,
-                        offer_price: offer ? offer : offer_price,
-                        category: cname,
-                        count,
-                      }),
+                          id,
+                          name,
+                          image,
+                          main_image,
+                          offer_price: offer ? offer : offer_price,
+                          category: cname,
+                          count,
+                        }),
                     )
                   : false; // Set to false if the resulting array is empty
               })()
@@ -542,10 +639,18 @@ const Summary = ({navigation, route}) => {
     return acc;
   }, {});
 
-  // print(transformStructure, 'transformStructure');
-  // print(planAmmount, 'planAmmount');
+  // customFoodPlan day's finding function
+  const datesWithId =
+    Object.keys(transformStructure).length > 0
+      ? Object.keys(transformStructure).filter(date =>
+          Object.values(transformStructure[date]).some(
+            meal => Array.isArray(meal) && meal.some(item => item.id),
+          ),
+        )
+      : 0;
 
-  //BN
+  const allPlanDays = datesWithId?.length > 0 ? datesWithId?.length : planDays;
+
   const apiCall = async (paymentData = '') => {
     try {
       const isRenewCustomPlan =
@@ -607,6 +712,7 @@ const Summary = ({navigation, route}) => {
               spice_preference: memberShipData.spice_preference,
               food_container: memberShipData.food_container,
               are_you_busy: memberShipData.are_you_busy,
+              trainerStatus: memberShipData.trainerStatus,
             }),
           );
         }
@@ -668,9 +774,9 @@ const Summary = ({navigation, route}) => {
       // print(response, 'response');
       if (response.status == 200) {
         const resparse = await response.json();
-        // print(resparse, 'resparse');
         if (resparse.status == 'success') {
           if (resparse?.user_data) {
+            dispatch(setUserType('user'));
             dispatch(
               setProfileData({
                 userId: resparse.user_data.user_id,
@@ -688,30 +794,64 @@ const Summary = ({navigation, route}) => {
                   name: 'profile.jpeg',
                   type: 'image/jpeg',
                 },
+                weight: resparse.weight,
+                height: resparse.height,
+                age: resparse.age,
+                bmi: resparse.bmi,
+                activity: resparse.activity,
+                bmr: resparse.bmr,
+                tef: resparse.tef,
+                tdee: resparse.tdee,
+                goal: resparse.goal,
+                mac_protein: resparse.mac_protein,
+                mac_calories: resparse.mac_calories,
+                mac_fats: resparse.mac_fats,
               }),
             );
-            dispatch(setUserType('user'));
+
             dispatch(userSettingApi());
           }
+          // setPaymentLoad(false);
+          // navigation.navigate('thanksScreen', {
+          //   page: 'summary',
+          //   id: resparse?.id,
+          // });
           setPaymentLoad(false);
-          navigation.navigate('thanksScreen', {page: 'summary'});
           showToast('success', '', resparse.message, 2000);
+          navigation.reset({
+            index: 0,
+            routes: [{name: 'home'}],
+          });
+          navigation.navigate('thanksScreen', {
+            page: 'summary',
+            id: resparse?.id,
+          });
+
         }
+        setBtnDisabled(false);
       } else {
-        setPaymentLoad(false);
-        showToast('info', '', 'Something went wrong', 2000);
-        print(response.status, 'status in checkout screen');
+        print(response.status, 'status in summary screen');
       }
+      setPaymentLoad(false);
+      setBtnDisabled(false);
     } catch (e) {
       setPaymentLoad(false);
-      console.log(e, 'error in checkout screen');
+      setBtnDisabled(false);
+      console.log(e, 'error in summary screen');
     }
   };
 
-  return (
-    <>
-      {paymentLoad ? (
-        <View style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
+  useEffect(() => {
+    dispatch(userSettingApi());
+  }, []);
+
+  return paymentLoad ? (
+    <View
+      style={{
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
           <LottieView
             autoPlay={true}
             style={{width: 200, height: 200, top: 5}}
@@ -720,6 +860,7 @@ const Summary = ({navigation, route}) => {
         </View>
       ) : (
         <MainOverflowCard borderRadius={40} altStyle={{paddingTop: 22}}>
+          <>
           <View
             style={{
               borderRadius: 20,
@@ -747,7 +888,10 @@ const Summary = ({navigation, route}) => {
                 keys={'Weight'}
                 value={`${memberShipData.weight}' Kg`}
               />
-              <DetailCard keys={'Height'} value={memberShipData.height} />
+              <DetailCard
+                keys={'Height'}
+                value={`${memberShipData.height}' cm`}
+              />
               <DetailCard keys={'BMI'} value={memberShipData.bmi} />
             </View>
             {/* BMI scale */}
@@ -791,35 +935,39 @@ const Summary = ({navigation, route}) => {
                 <BMIValue val={summary.underWeight} name={'Under Weight'} />
                 <BMIValue val={summary.normalWeight} name={'Normal Weight'} />
                 <BMIValue val={summary.overWeight} name={'Over Weight'} />
-                <BMIValue val={summary.overedWeight} name={'Overed Weight'} />
+                <BMIValue val={summary.overedWeight} name={'Obese Weight'} />
               </View>
             </View>
           </View>
-          {/* bill details */}
-          {/* <Text
-            style={[
-              styles.baby_blk,
-              {
-                fontSize: fontScalling(2.7),
-                marginBottom: widthResponse ? 15 : 20,
-              },
-            ]}>
-            Bill Details
-          </Text> */}
+
           <View
             style={{
-              width: scrnWidth,
-              left: -23,
+                 width: scrnWidth,
+                 left: -23,
             }}>
-            <NutritionCard data={nutrientsList} />
-            {/* overflow view */}
-            <OrderPriceContainer
-              data={planAmmount}
-              km={planAmmount.km}
-              pinkColor={true}
-              feePerMeal={true}
-              // orders={true}
-            />
+            {allPlanDays && (
+              <View style = {{marginHorizontal: 20}}>
+              <NutritionCard
+                perDayValue={true}
+                data={nutrientsList}
+                days={Number(allPlanDays)}
+              />
+              </View>
+            )}
+            {/* Coupon code block */}
+                      <View
+                        style={{
+                          marginHorizontal: 25,
+                          borderRadius: 10,
+                          marginBottom: 15,
+                        }}>
+                        <OrderPriceContainer
+                          data={planAmmount}
+                          km={planAmmount.km}
+                          pinkColor={true}
+                          feePerMeal={true}
+                        />
+                      </View>
             {summeryContent[6]?.context == 'edit' && editPlanDetails && (
               <Animatable.View
                 animation={'zoomIn'}
@@ -852,114 +1000,67 @@ const Summary = ({navigation, route}) => {
               </Animatable.View>
             )}
             {/* Voucher */}
-            {summeryContent[6].context != 'edit' && ifComparePriceIsMore && (
+            {/* Voucher */}
+          {summeryContent[6].context != 'edit' &&
+            ifComparePriceIsMore &&
+            userType == 'user' && (
               <View
                 style={{
-                  backgroundColor: appColor.black,
-                  paddingVertical: widthResponse ? 15 : 20,
-                  paddingHorizontal: 23,
+                  paddingTop: widthResponse ? 10 : 20, //@@
+                  paddingHorizontal: 20,
                 }}>
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'stretch',
-                    justifyContent: 'center',
-                    backgroundColor: appColor.Textlightblack,
-                    borderRadius: 30,
-                    padding: 5,
-                    paddingLeft: 20,
-                  }}>
-                  <TextInput
-                    placeholder="Enter code / voucher"
-                    placeholderTextColor={appColor.placeHolderText}
-                    style={{
-                      flex: 1,
-                      paddingHorizontal: 15,
-                      fontSize: fontScalling(1.8),
-                      fontFamily: appFont.rR,
-                      color: appColor.textWhite,
-                    }}
-                    value={promoCode}
-                    onChangeText={value => {
-                      setpromoCode(value);
+                <CoupanBlock
+                  applied={planAmmount?.discount?.code == null}
+                  type={'assessment'}
+                  onpress={() => {
+                    navigation.navigate('coupon', {
+                      type: 'assessment',
+                      days: allPlanDays,
+                    });
+                  }}
+                />
+                              {planAmmount?.discount?.code == null && (
+                  <Coupon
+                    route={{
+                      params: {
+                        distance: '',
+                        type: 'assessment',
+                        days: allPlanDays,
+                      },
                     }}
                   />
-                  <Animatable.View
-                    animation={'slideInLeft'}
-                    duration={1000}
-                    onTouchEnd={() => {
-                      handlepromoCode();
-                    }}
-                    style={{
-                      justifyContent: 'center',
-                      borderRadius: 30,
-                      backgroundColor: appColor.white,
-                    }}>
-                    <Text
-                      style={[
-                        styles.baby_blk,
-                        {paddingHorizontal: 30, fontSize: fontScalling(2.5)},
-                      ]}>
-                      Apply code
-                    </Text>
-                  </Animatable.View>
-                </View>
+                )}
               </View>
             )}
-            {summeryContent[6].context != 'edit' && (
-              <View
-                style={{
-                  backgroundColor: appColor.black,
-                  paddingVertical: widthResponse ? 15 : 20,
-                  paddingHorizontal: 23,
-                }}>
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'stretch',
-                    justifyContent: 'center',
-                    backgroundColor: appColor.Textlightblack,
-                    borderRadius: 30,
-                    padding: 5,
-                    paddingLeft: 20,
-                  }}>
-                  <TextInput
-                    placeholder="Enter code / voucher"
-                    placeholderTextColor={appColor.placeHolderText}
-                    style={{
-                      flex: 1,
-                      paddingHorizontal: 15,
-                      fontSize: fontScalling(1.8),
-                      fontFamily: appFont.rR,
-                      color: appColor.textWhite,
-                    }}
-                    value={promoCode}
-                    onChangeText={value => {
-                      setpromoCode(value);
-                    }}
-                  />
-                  <Animatable.View
-                    animation={'slideInLeft'}
-                    duration={1000}
-                    onTouchEnd={() => {
-                      handlepromoCode();
-                    }}
-                    style={{
-                      justifyContent: 'center',
-                      borderRadius: 30,
-                      backgroundColor: appColor.white,
-                    }}>
-                    <Text
-                      style={[
-                        styles.baby_blk,
-                        {paddingHorizontal: 30, fontSize: fontScalling(2.5)},
-                      ]}>
-                      Apply code
-                    </Text>
-                  </Animatable.View>
-                </View>
-              </View>
-            )}
+          {summeryContent[6].context != 'edit' && userType == 'user' && (
+            <View
+              style={{
+                paddingTop: widthResponse ? 10 : 20, //@@
+                paddingHorizontal: 20,
+              }}>
+                <CoupanBlock
+                  applied={planAmmount?.discount?.code == null}
+                  type={'assessment'}
+                  onpress={() => {
+                    navigation.navigate('coupon', {
+                      type: 'assessment',
+                      days: allPlanDays,
+                    });
+                  }}
+                />
+              {planAmmount?.discount?.code == null && (
+                <Coupon
+                  route={{
+                    params: {
+                      distance: '',
+                      type: 'assessment',
+                      days: allPlanDays,
+                    },
+                  }}
+              />
+                )}
+            </View>
+                )}
           </View>
           <Controller
             name="checkbox"
@@ -975,7 +1076,6 @@ const Summary = ({navigation, route}) => {
                   marginTop: widthResponse ? 20 : 25,
                 }}
                 terms
-                // label={'I agree to the terms and conditions of Fitsuvai'}
               />
             )}
           />
@@ -1027,9 +1127,8 @@ const Summary = ({navigation, route}) => {
             </Text>
             <Text style={styles.roboto_light}>{summary.note}</Text>
           </View>
-        </MainOverflowCard>
-      )}
     </>
+    </MainOverflowCard>
   );
 };
 
@@ -1040,9 +1139,9 @@ const useStyle = () => {
 
   const styles = StyleSheet.create({
     dots: {
-      width: 15,
-      height: 15,
-      borderWidth: 4.5,
+      width: widthResponse ? 15 : 23,
+      height: widthResponse ? 15 : 23,
+      borderWidth: widthResponse ? 4.5 : 6.3,
       borderRadius: 30,
       borderColor: appColor.themeYellow,
       backgroundColor: appColor.bgWhite,
@@ -1051,7 +1150,7 @@ const useStyle = () => {
       width: '80%',
       alignSelf: 'center',
       alignItems: 'center',
-      height: 10,
+      height: widthResponse ? 10 : 14,
       flexDirection: 'row',
       justifyContent: 'space-between',
       backgroundColor: appColor.black,
@@ -1063,7 +1162,7 @@ const useStyle = () => {
       left: 0,
       borderRadius: 50,
       backgroundColor: appColor.themeYellow,
-      height: 5,
+      height: widthResponse ? 5 : 7,
     },
     baby_blk: {
       fontFamily: appFont.bB,

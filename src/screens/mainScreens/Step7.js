@@ -1,18 +1,17 @@
 import {
-  BackHandler,
-  Image,
+  FlatList,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
+  ViewBase,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useRef} from 'react';
 import {
   arrayLength,
   currencyConvertor,
   fontScalling,
-  formatDate,
   formatedDate,
   print,
   scrnHeight,
@@ -26,11 +25,7 @@ import PrimaryButton from '../../components/Buttons/PrimaryButton';
 import ButtonDropDown from '../../components/InputField/ButtonDropDown';
 import MainCard from '../../components/Card/MainCard';
 import StepHeading from '../../components/Card/StepHeading';
-import {
-  StackActions,
-  useIsFocused,
-  useNavigation,
-} from '@react-navigation/native';
+import {useNavigation} from '@react-navigation/native';
 import {setPosition} from '../../redux/SettingSlice';
 import {useDispatch, useSelector} from 'react-redux';
 import DatePick from '../../components/InputField/DatePick';
@@ -47,15 +42,45 @@ import {
 } from '../../redux/SummerySlice';
 import {useShowToast} from '../../components/Toast/ToastAlert';
 import UserPlanPrice from '../../Hooks/UserPlanPrice';
+import FastImage from 'react-native-fast-image';
 
 const Step7 = ({route}) => {
+  const [deleteDate, setDeleteDate] = useState('');
+  const [date, setDate] = useState('');
+  const [dateIndex, setDateIndex] = useState(0);
+  const [foodTypeIndex, setFoodIndex] = useState(0);
+  const [cloneIndex, setCloneIndex] = useState(0);
+  const [totalAmount, setTotAmt] = useState(0);
+  const [totalCalories, setTotalCalories] = useState(0);
+  const [totalFats, setTotalFats] = useState(0);
+  const [totalProtein, setTotalProtein] = useState(0);
+  const [totalCarbs, setTotalCarbs] = useState(0);
+  const [totalCount, setTotCount] = useState(0);
+  const [selectedDates, setSelectedDates] = useState([]);
+  const [foodCustomize, setCustomizeFood] = useState([]);
+  const [dishDropDown, setDishDropDown] = useState(false);
+  const [deleteModal, setdeleteModal] = useState(false);
+  const [editFoodPrice, setEditFoodPrice] = useState('');
+  const [comparePrice, setComparePrice] = useState('');
+  const [foodEditTC, setFoodEditTC] = useState('');
+  const [totalFoodSections, setFoodSection] = useState('');
+  const [dropDown, setDropDown] = useState(true);
+  const [fieldEdit, setFieldEdit] = useState(false);
+  const [catDropDown, setCatDropDown] = useState('');
+  // this for Catogory dropDown Scroll Animation
+  const [scrollYValue, setScrollYValue] = useState(0);
+
   const {styles} = useStyles();
   const appColor = appColors();
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const showToast = useShowToast();
   const {PlanPriceInfo} = UserPlanPrice();
-  const isFocus = useIsFocused();
+
+  // ----- ref ----------
+  const scrollRef = useRef(null);
+  const containerScrollref = useRef(null);
+  const selectBlockRef = useRef(null);
 
   const foodEdit =
     route &&
@@ -71,30 +96,11 @@ const Step7 = ({route}) => {
     summeryContent,
     assesMentIds,
     planAmmount,
+    nutrientsList,
     editPlanDetails,
   } = useSelector(state => state.summary);
 
-  const [deleteDate, setDeleteDate] = useState('');
-  const [date, setDate] = useState('');
-  const [dateIndex, setDateIndex] = useState(0);
-  const [foodTypeIndex, setFoodIndex] = useState(0);
-  const [cloneIndex, setCloneIndex] = useState(0);
-  const [totalAmount, setTotAmt] = useState(0);
-  const [totalCount, setTotCount] = useState(0);
-  const [selectedDates, setSelectedDates] = useState([]);
-  const [foodCustomize, setCustomizeFood] = useState([]);
-  const [dishDropDown, setDishDropDown] = useState(false);
-  const [deleteModal, setdeleteModal] = useState(false);
-  const [editFoodPrice, setEditFoodPrice] = useState('');
-  const [comparePrice, setComparePrice] = useState('');
-  const [foodEditTC, setFoodEditTC] = useState('');
-  const [totalFoodSections, setFoodSection] = useState('');
-  const [triggerEditResetPlan, setEditresetPlan] = useState(0);
-  const [dropDown, setDropDown] = useState(true);
-  const [fieldEdit, setFieldEdit] = useState(false);
-
   const slideDown = {
-    //@@
     0: {
       transform: [{translateY: 0}],
       opacity: 1,
@@ -109,9 +115,411 @@ const Step7 = ({route}) => {
     },
   };
 
+  // productCard $
+  const ListSection = ({allProducts, item, sections, CI}) => {
+    return (
+      <View
+        style={{
+          maxHeight: scrnHeight / 3,
+          borderRadius: 15,
+          overflow: 'hidden',
+          zIndex: -1,
+        }}>
+        <ScrollView
+          nestedScrollEnabled={true}
+          style={{
+            maxHeight: widthResponse ? scrnHeight / 3 : scrnHeight / 2.5,
+            backgroundColor: appColor.white,
+            borderRadius: widthResponse ? 8 : 15,
+          }}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingHorizontal: widthResponse ? 5 : 20,
+          }}>
+          {allProducts.map((list, listIndex) => {
+            const lastIndex = listIndex == allProducts.length - 1;
+            return (
+              <Pressable
+                onPress={() => {
+                  handleSelect(item.date, sections, list, CI);
+                  setFieldEdit(true);
+                  setDishDropDown(false);
+                }}
+                key={listIndex}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'flex-start',
+                  paddingVertical: 10,
+                  paddingTop: 10,
+                  borderBottomWidth: lastIndex ? 0 : 0.8,
+                  borderBlockColor: appColor.greyBg,
+                }}>
+                {list.main_image && (
+                  <FastImage
+                    resizeMode="cover"
+                    source={{
+                      priority: FastImage.priority.high,
+                      uri: list.main_image,
+                    }}
+                    style={{
+                      width: widthResponse ? 45 : 50, //@@
+                      height: widthResponse ? 45 : 50, //@@
+                      borderRadius: widthResponse ? 10 : 8, //@@
+                      // marginRight: 15,
+                    }}
+                  />
+                )}
+                <View
+                  style={{
+                    paddingLeft: 10,
+
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    width: widthResponse ? '85%' : '88%', //@@,
+                  }}>
+                  <Text style={[styles.subText]}>{list.name}</Text>
+                  {list.offer != 0 && (
+                    <Text
+                      style={[
+                        styles.subText,
+                        {
+                          fontFamily: appFont.rB,
+                        },
+                      ]}>
+                      {`( ${currencyConvertor(list.offer)} )`}
+                    </Text>
+                  )}
+                </View>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </View>
+    );
+  };
+
+  // catogary card $
+  const CatListSection = ({catogary, allProducts, item, sections, CI}) => {
+    return (
+      <View
+        key={CI}
+        style={{
+          maxHeight: scrnHeight / 2.5,
+          borderRadius: 15,
+          marginBottom: 10,
+          overflow: 'hidden',
+          zIndex: -1,
+        }}>
+        <ScrollView
+          keyboardShouldPersistTaps="never"
+          nestedScrollEnabled={true}
+          style={{
+            maxHeight: widthResponse ? scrnHeight / 2 : scrnHeight / 2.5,
+            backgroundColor: appColor.white,
+            borderRadius: widthResponse ? 8 : 15,
+            marginBottom: 10,
+          }}
+          ref={scrollRef}
+          showsVerticalScrollIndicator={true}
+          contentContainerStyle={{
+            paddingHorizontal: widthResponse ? 5 : 20,
+            //paddingVertical: 5,
+            marginVertical: 5,
+          }}>
+          {catogary.map((list, listIndex) => {
+            const lastIndex = listIndex == catogary.length - 1;
+            const enableDropDown = list.id == catDropDown.id;
+            const catFilterProduct = allProducts.filter(
+              data => data.cname == catDropDown.name,
+            ); //$
+            return (
+              <View
+                onLayout={({nativeEvent}) => {
+                  if (listIndex == 0) {
+                    setScrollYValue(
+                      catDropDown.id == list.id ? 0 : nativeEvent.layout.height,
+                    );
+                  }
+                }}
+                key={listIndex}>
+                <Pressable
+                  onPress={() => {
+                    setCatDropDown(predata =>
+                      predata.id == list.id ? '' : list,
+                    );
+                    if (catDropDown.id != list.id) {
+                      setTimeout(() => {
+                        scrollRef.current?.scrollTo({
+                          y: Math.round(scrollYValue * listIndex),
+                          duration: 2000,
+                          animated: true,
+                        });
+                      }, 100);
+                    }
+                  }}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'flex-start',
+                    paddingVertical: 7,
+                    borderBottomWidth: lastIndex ? 0 : 0.8,
+                    borderBlockColor: appColor.greyBg,
+                    flex: 1,
+                    paddingHorizontal: 5,
+                    borderRadius: 10,
+                    overflow: 'hidden',
+                    backgroundColor: enableDropDown
+                      ? appColor.borderColor
+                      : appColor.white,
+                  }}>
+                  {list.image && (
+                    <FastImage
+                      resizeMode="cover"
+                      source={{
+                        priority: FastImage.priority.high,
+                        uri: list.image,
+                      }}
+                      style={{
+                        width: widthResponse ? 40 : 50, //@@
+                        height: widthResponse ? 30 : 50, //@@
+                        borderRadius: widthResponse ? 5 : 8, //@@,
+                        borderWidth: 2,
+                        borderColor: appColor.sliderGreyBg,
+                        // marginRight: 15,
+                      }}
+                    />
+                  )}
+                  <View
+                    style={{
+                      paddingLeft: 10,
+
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      flex: 1,
+                    }}>
+                    <Text
+                      style={{
+                        fontFamily: appFont.bB,
+                        fontSize: fontScalling(2),
+                        color: enableDropDown
+                          ? appColor.gold
+                          : appColor.textGrey,
+                      }}>
+                      {list.name}
+                    </Text>
+                    <Pressable
+                      onPress={() => {
+                        setCatDropDown(predata =>
+                          predata.id == list.id ? '' : list,
+                        ); //$
+                      }}
+                      style={{
+                        padding: 5,
+                        backgroundColor: appColor.cartBg,
+                        borderRadius: 10,
+                      }}>
+                      <Icon
+                        ComponentName={'AntDesign'}
+                        name={enableDropDown ? 'upcircle' : 'downcircle'}
+                        size={18}
+                        color={
+                          enableDropDown ? appColor.activegreen : appColor.gold
+                        }
+                      />
+                    </Pressable>
+                  </View>
+                </Pressable>
+                {enableDropDown && (
+                  <ListSection
+                    allProducts={catFilterProduct}
+                    item={item}
+                    sections={sections}
+                    CI={CI}
+                  />
+                )}
+              </View>
+            );
+          })}
+        </ScrollView>
+      </View>
+    );
+  };
+
+  // increament,decrement Block $
+  const SelectBlock = ({
+    CI,
+    data,
+    selectDish,
+    dayValid,
+    index,
+    ind,
+    item,
+    sections,
+  }) => {
+    return (
+      <View key={CI}>
+        {/* + incrent - decrement block */}
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: 10,
+            paddingHorizontal: 5,
+          }}>
+          {/* Dish Selection Button */}
+          <Pressable
+            onPress={() => {
+              if (dayValid) {
+                setDateIndex(index);
+                setFoodIndex(ind);
+                setDishDropDown(!dishDropDown);
+                setCloneIndex(CI);
+                setCatDropDown('');
+                // setTimeout(() => {
+                //   selectBlockRef?.current?.scrollToIndex({
+                //     animation: true,
+                //     index: CI,
+                //   });
+                // }, 500);
+              }
+            }}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              paddingHorizontal: 10,
+              paddingVertical: 8,
+              backgroundColor: appColor.white,
+              borderRadius: 10,
+              flex: 1,
+              // borderWidth: 1,
+              width: widthResponse ? '70%' : '80%', //@@
+            }}>
+            {data.image != ''
+              ? data.image
+              : data.main_image && (
+                  <FastImage
+                    resizeMode="cover"
+                    style={{
+                      width: 35,
+                      height: 35,
+                      borderRadius: 5,
+                      marginRight: 10,
+                    }}
+                    source={{
+                      priority: FastImage?.priority?.high,
+                      uri: data.image != '' ? data.image : data.main_image,
+                    }}
+                  />
+                )}
+            <Text
+              numberOfLines={2}
+              style={[
+                styles.normalText,
+                {
+                  color: appColor.bgBlack,
+                  flex: 1,
+                  fontSize: fontScalling(1.9), //@@
+                },
+              ]}>
+              {data.name
+                ? `${data.name} ( ${currencyConvertor(
+                    data.offer ? data.offer : data.offer_price,
+                  )} ${data.count > 1 ? ' X' + ' ' + data.count + ' ' : ''})`
+                : 'select Dish'}
+            </Text>
+
+            <Icon
+              ComponentName={'AntDesign'}
+              name={selectDish ? 'upcircle' : 'downcircle'}
+              size={widthResponse ? 15 : 25} //@@
+              color={appColor.Textlightblack}
+            />
+          </Pressable>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+            }}>
+            <Pressable
+              onPress={() => {
+                if (dayValid) {
+                  setFieldEdit(true);
+                  handleDish_Count('decrement', index, ind, CI);
+                }
+              }}
+              style={{
+                borderRadius: 100, //@@
+                width: widthResponse ? 30 : 38, //@@
+                height: widthResponse ? 30 : 38, //@@
+                backgroundColor: appColor.white,
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginLeft: 10,
+              }}>
+              <Icon
+                ComponentName={'Entypo'}
+                name={'minus'}
+                size={widthResponse ? 18 : 25} //@@
+                color={appColor.bgBlack}
+              />
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                if (dayValid) {
+                  handleDish_Count('increment', index, ind, CI);
+                }
+              }}
+              style={{
+                borderRadius: 100, //@@
+                width: widthResponse ? 30 : 38, //@@
+                height: widthResponse ? 30 : 38, //@@
+                backgroundColor: appColor.white,
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginLeft: 10,
+              }}>
+              <Icon
+                ComponentName={'Entypo'}
+                name={'plus'}
+                size={widthResponse ? 18 : 25} //@@
+                color={appColor.bgBlack}
+              />
+            </Pressable>
+          </View>
+        </View>
+        {/* DropDown Block */}
+        {arrayLength(validCatogary) && selectDish && (
+          <CatListSection
+            catogary={validCatogary}
+            allProducts={allProducts}
+            item={item}
+            sections={sections}
+            CI={CI}
+          />
+        )}
+      </View>
+    );
+  };
+
+  // All Products Sections $
   const filteredSuggestions =
     (userSettings?.suggestions &&
-      userSettings?.suggestions.filter(item => item.type === 1)) ||
+      userSettings?.suggestions.filter(item => {
+        return item.type === 1;
+      })) ||
+    [];
+
+  // catogary section $
+  const filterCatogary =
+    (userSettings?.suggestions &&
+      userSettings?.suggestions.filter(item => {
+        return item.type === 2;
+      })) ||
     [];
 
   const holidayDates =
@@ -126,6 +534,8 @@ const Step7 = ({route}) => {
     type: 1,
   });
 
+  // console.log(containerScrollref?.current, 'containerScrollref');
+
   // Food List For DropDowns
   const allProducts =
     userSettings?.suggestions && userSettings?.suggestions.length > 0
@@ -136,6 +546,17 @@ const Step7 = ({route}) => {
           };
         })
       : [];
+     //print(allProducts, 'allProducts');
+ 
+
+  // Filter empty product catogary $
+  const validCatogary = filterCatogary
+    .filter(data => data.show_on_otherproducts == '0')
+    .filter(data =>
+      allProducts.some(product => {
+        return product.cname == data.name;
+      }),
+    );
 
   // Date Based list array creation;
   function dateBasedListCreation() {
@@ -214,6 +635,43 @@ const Step7 = ({route}) => {
         return day;
       });
     });
+  };
+
+  // Increment & Decrement a dropDown count
+  const handleDish_Count = (count, dateIndex, sectionIndex, cloneId) => {
+    const updatedFood = JSON.parse(JSON.stringify(foodCustomize));
+    const selectedSection = Object.keys(updatedFood[dateIndex].foodSections)[
+      sectionIndex
+    ];
+    if (count == 'increment') {
+      updatedFood[dateIndex].foodSections[selectedSection].splice(
+        cloneId + 1,
+        0,
+        {},
+      );
+    } else {
+      if (
+        updatedFood[dateIndex].countFoodSection[selectedSection][0].count == 1
+      ) {
+        updatedFood[dateIndex].countFoodSection[selectedSection][0] = {};
+      } else if (
+        updatedFood[dateIndex].countFoodSection[selectedSection][0].count > 1
+      ) {
+        updatedFood[dateIndex].countFoodSection[selectedSection][0].count -= 1;
+      }
+      if (updatedFood[dateIndex].foodSections[selectedSection].length == 1) {
+        updatedFood[dateIndex].foodSections[selectedSection].splice(
+          cloneId,
+          1,
+          {},
+        );
+      }
+      if (updatedFood[dateIndex].foodSections[selectedSection].length > 1) {
+        updatedFood[dateIndex].foodSections[selectedSection].splice(cloneId, 1);
+        setDishDropDown(false); //@@
+      }
+    }
+    setCustomizeFood(updatedFood);
   };
 
   function allDatesPriceCalculations(selectedFoods) {
@@ -303,6 +761,10 @@ const Step7 = ({route}) => {
     setFoodEditTC(grantCount);
     setTotCount(grantCount);
     setTotAmt(grantTotal);
+    setTotalCalories(grantTotalCalories);
+    setTotalFats(grantTotalFats);
+    setTotalProtein(grantTotalProtein);
+    setTotalCarbs(grantTotalCarbs);
     dispatch(
       setNutrients({
         totalProtein: grantTotalProtein,
@@ -327,34 +789,6 @@ const Step7 = ({route}) => {
     });
   };
 
-  // Increment & Decrement a dropDown count
-  const handleDish_Count = (count, dateIndex, sectionIndex, cloneId) => {
-    const updatedFood = JSON.parse(JSON.stringify(foodCustomize));
-    const selectedSection = Object.keys(updatedFood[dateIndex].foodSections)[
-      sectionIndex
-    ];
-    if (count == 'increment') {
-      updatedFood[dateIndex].foodSections[selectedSection].splice(
-        cloneId + 1,
-        0,
-        {},
-      );
-    } else {
-      if (updatedFood[dateIndex].foodSections[selectedSection].length == 1) {
-        updatedFood[dateIndex].foodSections[selectedSection].splice(
-          cloneId,
-          1,
-          {},
-        );
-      }
-      if (updatedFood[dateIndex].foodSections[selectedSection].length > 1) {
-        updatedFood[dateIndex].foodSections[selectedSection].splice(cloneId, 1);
-        setDishDropDown(false); //@@
-      }
-    }
-    setCustomizeFood(updatedFood);
-  };
-
   // Empty dish Remove
   const filterEmptyDish = () => {
     const changeData = foodCustomize
@@ -377,67 +811,32 @@ const Step7 = ({route}) => {
       allDatesPriceCalculations(foodCustomize);
     }
   }, [foodCustomize]);
-
-  // print(foodCustomize, 'foood');
-
-  // Edit Food list Based Array creation
-  // useEffect(() => {
-  //   if (foodEdit) {
-  //     setCustomizeFood([]);
-  //     const foodData = route && route?.params && route?.params?.editFoods;
-  //     setEditFoodPrice(route && route?.params && route?.params?.foodPrice);
-  //     const expectedSections = ['breakfast', 'lunch', 'dinner'];
-  //     const editableFood = Object.keys(foodData).map((date, index) => {
-  //       const foodSections = foodData[date];
-  //       expectedSections.forEach(section => {
-  //         if (
-  //           (Array.isArray(foodSections[section]) &&
-  //             foodSections[section].length == 0) ||
-  //           !foodSections[section]
-  //         ) {
-  //           foodSections[section] = [{}];
-  //         }
-  //       });
-
-  //       //reorder the sections
-  //       const orderedSections = {};
-  //       expectedSections.forEach(section => {
-  //         orderedSections[section] = foodSections[section];
-  //       });
-
-  //       // });
-  //       return {
-  //         date: date,
-  //         foodSections: orderedSections,
-  //       };
-  //     });
-  //     if (editableFood && editableFood.length > 0) {
-  //       setCustomizeFood(editableFood);
-  //     }
-  //   }
-  // }, [foodEdit, triggerEditResetPlan]);
-
-  // useEffect(() => {
-  //   if (foodEdit && route?.params?.planId) {
-  //     const backHandler = () => {
-  //       navigation.dispatch(StackActions.popToTop());
-
-  //       navigation.navigate('Profile', {
-  //         screen: 'subscriptionPlanHistory',
-  //       });
-  //       setTimeout(() => {
-  //         navigation.navigate('Profile', {
-  //           screen: 'SubscribedPlanDetail',
-  //           params: {id: route?.params?.planId},
-  //         });
-  //       }, 50);
-  //     };
-
-  //     BackHandler.addEventListener('hardwareBackPress', backHandler);
-  //     return () =>
-  //       BackHandler.removeEventListener('hardwareBackPress', backHandler);
-  //   }
-  // }, []);
+   const NutritionText = ({text = '', val = ''}) => {
+      return (
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginVertical: 2,
+            }}>
+              <Text style={[styles.NutrientsText, {width: '55%'}]}>
+                Total {text}
+              </Text>
+            <Text
+              style={[styles.NutrientsText, {width: '5%', textAlign: 'center'}]}>
+              -
+            </Text>
+              <Text
+                style={[
+                  styles.NutrientsText,
+                  {width: '40%', textAlign: 'right'},
+                ]}>
+                {Number(val).toFixed(2)} {text == 'Calories' ? 'Kcal' : 'gm'}
+              </Text>
+          </View>
+        )
+    };
 
   return (
     <MainCard altStyle={{paddingTop: 0}}>
@@ -455,9 +854,10 @@ const Step7 = ({route}) => {
       <View
         style={{
           flex: 1, //@@
+          height: scrnHeight,
         }}>
         {/* Date and CustomFood Block */}
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={{flex: 1}}>
           {/* Date Range Selection */}
           {!foodEdit && (
             <>
@@ -512,395 +912,147 @@ const Step7 = ({route}) => {
               </DatePick>
             </>
           )}
-          {/* Customize FoodDish Block */}
+          {/* @@ */}
           {foodCustomize && foodCustomize.length > 0 ? (
-            foodCustomize.map((item, index) => {
-              const currentDate = new Date().toISOString().split('T')[0];
-              const currentTime = new Date().toLocaleTimeString();
-              const currentFormatedDay = formatDate(currentDate);
+            <FlatList
+            showsVerticalScrollIndicator={false}
+            nestedScrollEnabled={true}
+              ref={containerScrollref}
+              data={foodCustomize}
+              renderItem={({item, index}) => {
+                const currentDate = new Date().toISOString().split('T')[0];
+                const dayValid = currentDate < item.date;
+                return (
+                  // dropDownContainer
+                  <View
+                    key={index}
+                    style={[
+                      styles.cardContainer,
+                      {
+                        backgroundColor:
+                          index == dateIndex
+                            ? appColor.lightGreen
+                            : appColor.cardBack,
+                        opacity: dayValid ? 1 : 0.3,
+                      },
+                    ]}>
+                    {/* Delete Icon Block */}
+                    {customizeFood && customizeFood.length !== 1 && (
+                      <Pressable
+                        onPress={
+                          !dayValid
+                            ? () => {}
+                            : () => {
+                                setdeleteModal(true);
+                                setDeleteDate(item.date);
+                              }
+                        }
+                        style={styles.deleteIconContainer}>
+                        <Icon
+                          ComponentName={'MaterialIcons'}
+                          name={'delete-sweep'}
+                          size={widthResponse ? 25 : 30} //@@
+                          color={appColor.white}
+                        />
+                      </Pressable>
+                    )}
 
-              const dayValid = currentDate < item.date;
-              return (
-                <View
-                  key={index}
-                  style={{
-                    backgroundColor:
-                      index == dateIndex
-                        ? appColor.lightGreen
-                        : appColor.cardBack,
-                    borderRadius: 10,
-                    paddingHorizontal: 15,
-                    paddingVertical: 20,
-                    position: 'relative',
-                    overflow: 'hidden',
-                    marginBottom: 10,
-                    opacity: dayValid ? 1 : 0.3,
-                  }}>
-                  {/* Delete Icon Block */}
-                  {customizeFood && customizeFood.length !== 1 && (
+                    {/* Date section  */}
                     <Pressable
-                      onPress={
-                        !dayValid
-                          ? () => {}
-                          : () => {
-                              setdeleteModal(true);
-                              setDeleteDate(item.date);
-                              // setFieldEdit(true);
-                              // handleDelete(item.date);
-                            }
-                      }
-                      style={{
-                        position: 'absolute',
-                        backgroundColor: appColor.bgBlack,
-                        paddingHorizontal: 20,
-                        paddingTop: 20,
-                        paddingBottom: 10,
-                        borderRadius: 30,
-                        top: -15,
-                        right: -15,
-                        alignItems: 'flex-end',
-                      }}>
-                      <Icon
-                        ComponentName={'MaterialIcons'}
-                        name={'delete-sweep'}
-                        size={widthResponse ? 25 : 30} //@@
-                        color={appColor.white}
-                      />
+                      onPress={() => {
+                        setTimeout(() => {
+                          containerScrollref?.current?.scrollToIndex({
+                            animation: true,
+                            index: index,
+                          });
+                        }, 500);
+                      }}
+                      style={{flexDirection: 'row', alignItems: 'center'}}>
+                      <Text style={styles.normalText}>Selected Dates -</Text>
+                      <Text
+                        style={
+                          ([styles.subText],
+                          {
+                            fontFamily: appFont.rB,
+                            color: appColor.bgBlack,
+                            fontSize: fontScalling(1.9),
+                          })
+                        }>
+                        {' ' + formatedDate(item.date)}
+                      </Text>
                     </Pressable>
-                  )}
-                  {/* Date section  */}
-                  <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                    <Text style={styles.normalText}>Selected Dates -</Text>
-                    <Text
-                      style={
-                        ([styles.subText],
-                        {
-                          fontFamily: appFont.rB,
-                          color: appColor.bgBlack,
-                          fontSize: fontScalling(1.9),
-                        })
-                      }>
-                      {' ' + formatedDate(item.date)}
-                    </Text>
+
+                    {/* Food Selection Container */}
+                    <View style={{marginTop: 15}}>
+                      {item &&
+                        item.foodSections &&
+                        Object.keys(item.foodSections).map((sections, ind) => {
+                          // print(sections, ' food sections');
+                          const isDateIndex = index == dateIndex;
+                          const isFoodIndex = ind == foodTypeIndex;
+                          const isSection =
+                            foodTypeIndex == ind &&
+                            dateIndex == index &&
+                            dropDown;
+                          const selectSections = isDateIndex && isFoodIndex;
+
+                          return (
+                            // BreakFast,Lunch,Dinner Button
+                            <ButtonDropDown
+                              onPress={
+                                !dayValid
+                                  ? () => {}
+                                  : () => {
+                                      setDropDown(!dropDown);
+                                      setDropDown(
+                                        selectSections ? !dropDown : true,
+                                      );
+                                      setDateIndex(index);
+                                      setFoodIndex(ind);
+                                      setTimeout(() => {
+                                        containerScrollref?.current?.scrollToIndex(
+                                          {animation: true, index: index},
+                                        );
+                                      }, 500);
+                                    }
+                              }
+                              key={ind}
+                              title={sections}
+                              active={isSection}>
+                              {/* Dish DropDown Selection ,+,- Block  */}
+                              {dropDown &&
+                                // selectSections &&
+                                item?.foodSections[sections] &&
+                                item?.foodSections[sections].length > 0 &&
+                                item.foodSections[sections].map((data, CI) => {
+                                  const cloneValid = CI == cloneIndex;
+                                  let selectDish =
+                                    isDateIndex &&
+                                    isFoodIndex &&
+                                    // dropDown &&
+                                    dishDropDown &&
+                                    cloneValid;
+                                  return (
+                                    <SelectBlock
+                                      CI={CI}
+                                      data={data}
+                                      selectDish={selectDish}
+                                      dayValid={dayValid}
+                                      index={index}
+                                      ind={ind}
+                                      item={item}
+                                      sections={sections}
+                                    />
+                                  );
+                                })}
+                            </ButtonDropDown>
+                          );
+                        })}
+                    </View>
                   </View>
-                  {/* Food Selection Container */}
-                  <View style={{marginTop: 15}}>
-                    {item &&
-                      item.foodSections &&
-                      Object.keys(item.foodSections).map((sections, ind) => {
-                        // print(sections, ' food sections');
-                        const isDateIndex = index == dateIndex;
-                        const isFoodIndex = ind == foodTypeIndex;
-                        const isSection =
-                          foodTypeIndex == ind &&
-                          dateIndex == index &&
-                          dropDown;
-                        const selectSections = isDateIndex && isFoodIndex;
-
-                        return (
-                          // BreakFast,Lunch,Dinner Button
-                          <ButtonDropDown
-                            onPress={
-                              !dayValid
-                                ? () => {}
-                                : () => {
-                                    setDropDown(!dropDown);
-                                    setDropDown(
-                                      selectSections ? !dropDown : true,
-                                    );
-                                    setDateIndex(index);
-                                    setFoodIndex(ind);
-                                  }
-                            }
-                            key={ind}
-                            title={sections}
-                            active={isSection}>
-                            {/* Dish DropDown Selection ,+,- Block  */}
-                            {selectSections &&
-                              dropDown &&
-                              item?.foodSections[sections] &&
-                              item?.foodSections[sections].length > 0 &&
-                              item.foodSections[sections].map((data, CI) => {
-                                const cloneValid = CI == cloneIndex;
-                                let selectDish =
-                                  isDateIndex &&
-                                  isFoodIndex &&
-                                  // dropDown &&
-                                  dishDropDown &&
-                                  cloneValid;
-                                return (
-                                  <View key={CI}>
-                                    {/* + incrent - decrement block */}
-                                    <View
-                                      style={{
-                                        flexDirection: 'row',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        marginBottom: 10,
-                                        paddingHorizontal: 5,
-                                      }}>
-                                      {/* Dish Selection Button */}
-                                      <Pressable
-                                        onPress={() => {
-                                          if (dayValid) {
-                                            setDateIndex(index);
-                                            setFoodIndex(ind);
-                                            setDishDropDown(!dishDropDown);
-                                            setCloneIndex(CI);
-                                          }
-                                        }}
-                                        style={{
-                                          flexDirection: 'row',
-                                          alignItems: 'center',
-                                          justifyContent: 'space-between',
-                                          paddingHorizontal: 10,
-                                          paddingVertical: 8,
-                                          backgroundColor: appColor.white,
-                                          borderRadius: 10,
-                                          flex: 1,
-                                          // borderWidth: 1,
-                                          width: widthResponse ? '70%' : '80%', //@@
-                                        }}>
-                                        {data.image && (
-                                          <Image
-                                            resizeMode="cover"
-                                            style={{
-                                              width: 35,
-                                              height: 35,
-                                              borderRadius: 5,
-                                              marginRight: 10,
-                                            }}
-                                            source={{uri: data.image}}
-                                          />
-                                        )}
-                                        <Text
-                                          numberOfLines={2}
-                                          style={[
-                                            styles.normalText,
-                                            {
-                                              color: appColor.bgBlack,
-                                              flex: 1,
-                                              fontSize: fontScalling(1.9), //@@
-                                            },
-                                          ]}>
-                                          {data.name
-                                            ? `${
-                                                data.name
-                                              } ( ${currencyConvertor(
-                                                data.offer
-                                                  ? data.offer
-                                                  : data.offer_price,
-                                              )} ${
-                                                data.count > 1
-                                                  ? ' X' +
-                                                    ' ' +
-                                                    data.count +
-                                                    ' '
-                                                  : ''
-                                              })`
-                                            : 'select Dish'}
-                                        </Text>
-                                        <Icon
-                                          ComponentName={'Entypo'}
-                                          name={
-                                            selectDish
-                                              ? 'chevron-up'
-                                              : 'chevron-down'
-                                          }
-                                          size={widthResponse ? 22 : 28} //@@
-                                        />
-                                      </Pressable>
-                                      <View
-                                        style={{
-                                          flexDirection: 'row',
-                                          alignItems: 'center',
-                                        }}>
-                                        <Pressable
-                                          onPress={() => {
-                                            if (dayValid) {
-                                              setFieldEdit(true);
-                                              handleDish_Count(
-                                                'decrement',
-                                                index,
-                                                ind,
-                                                CI,
-                                              );
-                                            }
-                                          }}
-                                          style={{
-                                            borderRadius: 100, //@@
-                                            width: widthResponse ? 30 : 38, //@@
-                                            height: widthResponse ? 30 : 38, //@@
-                                            backgroundColor: appColor.white,
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            marginLeft: 10,
-                                          }}>
-                                          <Icon
-                                            ComponentName={'Entypo'}
-                                            name={'minus'}
-                                            size={widthResponse ? 18 : 25} //@@
-                                            color={appColor.bgBlack}
-                                          />
-                                        </Pressable>
-                                        <Pressable
-                                          onPress={() => {
-                                            if (dayValid) {
-                                              handleDish_Count(
-                                                'increment',
-                                                index,
-                                                ind,
-                                                CI,
-                                              );
-                                            }
-                                          }}
-                                          style={{
-                                            borderRadius: 100, //@@
-                                            width: widthResponse ? 30 : 38, //@@
-                                            height: widthResponse ? 30 : 38, //@@
-                                            backgroundColor: appColor.white,
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            marginLeft: 10,
-                                          }}>
-                                          <Icon
-                                            ComponentName={'Entypo'}
-                                            name={'plus'}
-                                            size={widthResponse ? 18 : 25} //@@
-                                            color={appColor.bgBlack}
-                                          />
-                                        </Pressable>
-                                      </View>
-                                    </View>
-                                    {/* DropDown Block */}
-                                    {arrayLength(allProducts) && selectDish && (
-                                      <View
-                                        style={{
-                                          maxHeight: scrnHeight / 3,
-                                          borderRadius: 15,
-                                          marginBottom: 10,
-                                          overflow: 'hidden',
-                                          zIndex: -1,
-                                        }}>
-                                        <ScrollView
-                                          nestedScrollEnabled={true}
-                                          style={{
-                                            //@@
-
-                                            maxHeight: widthResponse
-                                              ? scrnHeight / 3
-                                              : scrnHeight / 2.5,
-                                            backgroundColor: appColor.white,
-                                            borderRadius: widthResponse
-                                              ? 8
-                                              : 15, //@@
-                                            marginBottom: 10,
-                                          }}
-                                          showsVerticalScrollIndicator={false}
-                                          contentContainerStyle={{
-                                            paddingHorizontal: widthResponse
-                                              ? 10
-                                              : 20, //@@
-                                            paddingVertical: 10,
-                                          }}>
-                                          {allProducts.map(
-                                            (list, listIndex) => {
-                                              const lastIndex =
-                                                listIndex ==
-                                                allProducts.length - 1;
-                                              return (
-                                                <Pressable
-                                                  onPress={() => {
-                                                    handleSelect(
-                                                      item.date,
-                                                      sections,
-                                                      list,
-                                                      CI,
-                                                    );
-                                                    setFieldEdit(true);
-                                                    setDishDropDown(false);
-                                                  }}
-                                                  key={listIndex}
-                                                  style={{
-                                                    flexDirection: 'row',
-                                                    alignItems: 'center',
-                                                    justifyContent:
-                                                      'flex-start',
-                                                    paddingVertical: 10,
-                                                    paddingTop: 10,
-                                                    borderBottomWidth: lastIndex
-                                                      ? 0
-                                                      : 0.8,
-                                                    borderBlockColor:
-                                                      appColor.greyBg,
-                                                  }}>
-                                                  {list.image != '' && (
-                                                    <Image
-                                                      resizeMode="cover"
-                                                      source={{uri: list.image}}
-                                                      style={{
-                                                        width: widthResponse
-                                                          ? 45
-                                                          : 50, //@@
-                                                        height: widthResponse
-                                                          ? 45
-                                                          : 50, //@@
-                                                        borderRadius:
-                                                          widthResponse
-                                                            ? 10
-                                                            : 8, //@@
-                                                        // marginRight: 15,
-                                                      }}
-                                                    />
-                                                  )}
-                                                  <View
-                                                    style={{
-                                                      paddingLeft: 10,
-
-                                                      flexDirection: 'row',
-                                                      alignItems: 'center',
-                                                      justifyContent:
-                                                        'space-between',
-                                                      width: widthResponse
-                                                        ? '85%'
-                                                        : '88%', //@@,
-                                                    }}>
-                                                    <Text
-                                                      style={[styles.subText]}>
-                                                      {list.name}
-                                                    </Text>
-                                                    {list.offer != 0 && (
-                                                      <Text
-                                                        style={[
-                                                          styles.subText,
-                                                          {
-                                                            fontFamily:
-                                                              appFont.rB,
-                                                          },
-                                                        ]}>
-                                                        {`( ${currencyConvertor(
-                                                          list.offer,
-                                                        )} )`}
-                                                      </Text>
-                                                    )}
-                                                  </View>
-                                                </Pressable>
-                                              );
-                                            },
-                                          )}
-                                        </ScrollView>
-                                      </View>
-                                    )}
-                                  </View>
-                                );
-                              })}
-                          </ButtonDropDown>
-                        );
-                      })}
-                  </View>
-                </View>
-              );
-            })
+                );
+              }}
+            />
           ) : (
             <View
               style={{
@@ -924,19 +1076,19 @@ const Step7 = ({route}) => {
               </Text>
             </View>
           )}
-        </ScrollView>
+        </View>
         {/* Payment Block */}
         {foodCustomize.length > 0 && (
-          <View
-            style={{
-              marginTop: 8, //@@
-              alignItems: 'center',
-              flexDirection: 'row',
-              justifyContent: 'flex-start',
-              paddingHorizontal: 10,
-              paddingBottom: widthResponse ? 90 : 140, //@@
-            }}>
-            <View style={{width: '50%', alignItems: 'center'}}>
+         <View style={[styles.paymentBlock]}>
+            <View
+              style={{
+                width: '100%',
+                alignItems: 'center',
+                justifyContent: 'space-evenly',
+                flexDirection: 'row-reverse',
+                marginBottom: 20,
+              }}>
+              <View style={{justifyContent: 'center', alignItems: 'center'}}>
               <Animatable.Text
                 animation={'bounceInLeft'}
                 duration={1000}
@@ -984,12 +1136,20 @@ const Step7 = ({route}) => {
                   </View>
                   <Text style={[styles.subText]}>Price Variation</Text>
                 </>
+                
               )}
+            </View>
+                <View style={[styles.nutritionContainer]}>
+                <NutritionText text="Calories" val={totalCalories} />
+                <NutritionText text="Proteins" val={totalProtein} />
+                <NutritionText text="Carbs" val={totalCarbs} />
+                <NutritionText text="Fats" val={totalFats} />
+                </View>
             </View>
             <View
               style={{
-                width: '50%',
-                // flexDirection: 'row',
+                width: '100%',
+                flexDirection: 'row-reverse',
                 alignItems: 'center',
               }}>
               {foodEdit ? (
@@ -999,6 +1159,7 @@ const Step7 = ({route}) => {
                       marginBottom: widthResponse ? 5 : 10, //@@
                       paddingVertical: 5,
                     }}
+                    parentStyle={{flex: 1}}
                     onPress={() => {
                       filterEmptyDish();
                       setTimeout(() => {
@@ -1093,6 +1254,7 @@ const Step7 = ({route}) => {
                     marginBottom: widthResponse ? 5 : 10,
                     paddingVertical: 5,
                   }}
+                  parentStyle={{flex: 1}}
                   onPress={() => {
                     filterEmptyDish();
                     setTimeout(() => {
@@ -1182,12 +1344,10 @@ const Step7 = ({route}) => {
               <PrimaryButton
                 altStyle={{paddingVertical: 5}}
                 black
+                parentStyle={{flex: 1, marginRight: 10}}
                 onPress={() => {
                   if (!foodEdit) {
                     dateBasedListCreation();
-                  }
-                  if (foodEdit) {
-                    setEditresetPlan(pre => pre + 1);
                   }
                 }}
                 Title={'Reset Plan'}
@@ -1231,7 +1391,6 @@ const Step7 = ({route}) => {
               width: scrnWidth / 2,
               height: scrnHeight / 7,
               borderWidth: 1,
-              // marginTop: -35,
             }}
             source={require('../../../assets/lottieFiles/trash_1.json')}
             loop={false}
@@ -1269,6 +1428,11 @@ const Step7 = ({route}) => {
                     setdeleteModal(false);
                     setDeleteDate('');
                     setFieldEdit(true);
+
+                    if (foodCustomize && foodCustomize.length == 1) {
+                      setDate('');
+                      setSelectedDates([]);
+                    }
                   }, 50);
                 }}>
                 <Text
@@ -1306,7 +1470,6 @@ const Step7 = ({route}) => {
           }
         </View>
       </Modal>
-      {/* </View> */}
     </MainCard>
   );
 };
@@ -1321,6 +1484,14 @@ const useStyles = () => {
       fontSize: fontScalling(3),
       color: appColor.black,
       // paddingBottom: 5,
+    },
+    cardContainer: {
+      borderRadius: 10,
+      paddingHorizontal: 15,
+      paddingVertical: 20,
+      position: 'relative',
+      overflow: 'hidden',
+      marginBottom: 10,
     },
     subText: {
       fontFamily: appFont.rM,
@@ -1338,6 +1509,38 @@ const useStyles = () => {
       flexDirection: 'row',
       justifyContent: 'space-between',
       width: '100%',
+    },
+    deleteIconContainer: {
+      position: 'absolute',
+      backgroundColor: appColor.bgBlack,
+      paddingHorizontal: 20,
+      paddingTop: 20,
+      paddingBottom: 10,
+      borderRadius: 30,
+      top: -15,
+      right: -15,
+      alignItems: 'flex-end',
+    },
+    paymentBlock: {
+      marginTop: 8, //@@
+      alignItems: 'center',
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'flex-start',
+      paddingHorizontal: 10,
+      paddingBottom: widthResponse ? 90 : 140, //@@
+    },
+    nutritionContainer: {
+      padding: 4,
+      paddingHorizontal: 6,
+      backgroundColor: appColor.greyBg,
+      borderRadius: 8,
+      width: widthResponse ? '60%' : '35%',
+    },
+    NutrientsText: {
+      fontSize: fontScalling(widthResponse ? 1.4 : 1.6),
+      color: appColor.black,
+      fontFamily: appFont.rM,
     },
   });
 

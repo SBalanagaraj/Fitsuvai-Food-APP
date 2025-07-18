@@ -14,7 +14,6 @@ import AppHeaders from '../components/Headers/AppHeaders';
 import MainStack from './MainStack';
 import Login from '../screens/auth/Login';
 import ForgotPassword from '../screens/auth/ForgotPassword';
-import appColors from '../utilities/appColors';
 import BlogOverview from '../screens/mainScreens/BlogOverview';
 import ProductOverView from '../screens/mainScreens/ProductOverView';
 import ProductDetails from '../screens/mainScreens/ProductDetails';
@@ -24,7 +23,6 @@ import DeleteScreen3 from '../screens/mainScreens/DeleteScreen3';
 import DeleteScreen1 from '../screens/mainScreens/DeleteScreen1';
 import ReviewPage from '../screens/mainScreens/ReviewPage';
 import ReviewProduct from '../screens/mainScreens/ReviewProduct';
-import TermsAndConditions from '../screens/auth/TermsAndConditions';
 import RewardCoin from '../screens/mainScreens/RewardCoin';
 import BlogDetail from '../screens/mainScreens/BlogDetail';
 import ThanksScreen from '../screens/mainScreens/ThanksScreen';
@@ -59,18 +57,20 @@ import Menu from '../screens/mainScreens/Menu';
 import SubcategoryScreen from '../screens/mainScreens/SubCatogary';
 import ChefLogin from '../screens/mainScreens/ChefLogin';
 import EditFood from '../screens/mainScreens/EditFood';
-import {print} from '../utilities/helperFunction';
+import LocationSearchScreen from '../screens/auth/LocationSearchScreen';
+import ManualLocation from '../screens/auth/ManualLocation';
+import MapViewScreen from '../screens/auth/MapViewScreen';
+import Coupon from '../screens/mainScreens/Coupon';
 
 const Stack = createStackNavigator();
 
 export const AuthStack = () => {
-  const appColor = appColors();
-
+  const {userSkipOption} = useSelector(state => state.auth);
   return (
     <>
       <>
         <Stack.Navigator
-          initialRouteName="main"
+          initialRouteName={userSkipOption == 0 ? 'register' : 'main'}
           screenOptions={{
             headerShown: false,
             CardStyleInterpolators:
@@ -81,10 +81,34 @@ export const AuthStack = () => {
           <Stack.Screen name="login" component={Login} />
           <Stack.Screen name="forgot" component={ForgotPassword} />
           <Stack.Screen name="otpScreen" component={Otp_auth} />
-
+          <Stack.Group
+            screenOptions={{
+              headerShown: true,
+              header: ({options}) => {
+                return (
+                  <AppHeaders
+                    title={options.title}
+                    searchDisabled
+                    bellDisabled={true}
+                    toggleDisable={false}
+                  />
+                );
+              },
+            }}>
+            <Stack.Screen
+              options={{title: 'Choose Your destination'}}
+              name="manualLocation"
+              component={ManualLocation}
+            />
+            <Stack.Screen
+              options={{title: 'Choose Your destination'}}
+              name="mapViewScreen"
+              component={MapViewScreen}
+            />
+          </Stack.Group>
           <Stack.Screen
-            name="TermsAndConditions"
-            component={TermsAndConditions}
+            name="locationSearch"
+            component={LocationSearchScreen}
           />
         </Stack.Navigator>
       </>
@@ -98,7 +122,6 @@ const NoBottomTab = () => {
   useEffect(() => {
     if (isFocus) {
       dispatch(setTermsPage(true));
-      // setTimeout(() => {}, 100);
     } else if (!isFocus) {
       dispatch(setTermsPage(false));
     }
@@ -114,35 +137,6 @@ const NoBottomTab = () => {
         <Stack.Screen name="member_1" component={MemberReg1} />
         <Stack.Screen name="member_2" component={MemberReg2} />
         <Stack.Screen name="member_3" component={MemberReg3} />
-      </Stack.Navigator>
-    </>
-  );
-};
-
-const NoBottomTabAssesment = () => {
-  const isFocus = useIsFocused();
-  const dispatch = useDispatch();
-  useEffect(() => {
-    if (isFocus) {
-      dispatch(setTermsPage(true));
-      // setTimeout(() => {}, 100);
-    } else if (!isFocus) {
-      dispatch(setTermsPage(false));
-    }
-  }, [isFocus]);
-  return (
-    <>
-      <Stack.Navigator
-        screenOptions={{
-          headerShown: false,
-          CardStyleInterpolators:
-            CardStyleInterpolators.forScaleFromCenterAndroid,
-        }}>
-        <Stack.Screen
-          name="assesment"
-          options={{title: 'START YOUR MEALS'}}
-          component={Assesments}
-        />
       </Stack.Navigator>
     </>
   );
@@ -172,6 +166,8 @@ export const DashBoardStack = () => {
                   backIconDisabled
                   searchDisabled
                   welcome={true}
+                  toggleDisable={false}
+                  location={true}
                 />
               );
             },
@@ -181,7 +177,7 @@ export const DashBoardStack = () => {
             options={{
               title:
                 userType == 'guest'
-                  ? 'Guest Users'
+                  ? 'Hi, Guest Users'
                   : userSettings &&
                     userSettings?.userInfo &&
                     userSettings?.userInfo?.first_name,
@@ -248,6 +244,11 @@ export const DashBoardStack = () => {
               options={{title: 'ProductDetails'}}
               component={ProductDetails}
             />
+            <Stack.Screen
+              name="coupon"
+              options={{title: 'Apply Coupon'}}
+              component={Coupon}
+            />
           </Stack.Group>
           <Stack.Screen
             name="gen_course"
@@ -269,21 +270,31 @@ export const DashBoardStack = () => {
             options={{title: 'About Us'}}
             component={AboutUs}
           />
-          <Stack.Screen
-            name="editFood"
-            options={{title: 'EDIT YOUR MEALS'}}
-            component={EditFood}
-          />
-          <Stack.Screen
-            name="step7"
-            options={{title: 'START YOUR MEALS'}}
-            component={Step7}
-          />
-          <Stack.Screen
-            name="summary"
-            options={{title: 'Summary'}}
-            component={Summary}
-          />
+          <Stack.Group
+            screenOptions={{
+              headerShown: true,
+              header: ({options}) => {
+                return (
+                  <AppHeaders title={options.title} toggleDisable={false} />
+                );
+              },
+            }}>
+            <Stack.Screen
+              name="editFood"
+              options={{title: 'EDIT YOUR MEALS'}}
+              component={EditFood}
+            />
+            <Stack.Screen
+              name="step7"
+              options={{title: 'START YOUR MEALS'}}
+              component={Step7}
+            />
+            <Stack.Screen
+              name="summary"
+              options={{title: 'Summary'}}
+              component={Summary}
+            />
+          </Stack.Group>
           <Stack.Screen
             name="thanksScreen"
             options={{title: 'Thank You'}}
@@ -306,7 +317,13 @@ export const DashBoardStack = () => {
           screenOptions={{
             headerShown: true,
             header: ({options}) => {
-              return <AppHeaders title={options.title} drawer={true} />;
+              return (
+                <AppHeaders
+                  title={options.title}
+                  drawer={true}
+                  toggleDisable={false}
+                />
+              );
             },
           }}>
           <Stack.Screen
@@ -324,6 +341,7 @@ export const DashBoardStack = () => {
                   title={options.title}
                   bellDisabled={true}
                   deleteIcon={true}
+                  toggleDisable={false}
                 />
               );
             },
@@ -381,6 +399,11 @@ export const CartStack = () => {
             options={{title: 'Saved address'}}
             component={ManageAddress}
           />
+          <Stack.Screen
+            name="coupon"
+            options={{title: 'Apply Coupon'}}
+            component={Coupon}
+          />
         </Stack.Group>
         <Stack.Group
           screenOptions={{
@@ -428,11 +451,19 @@ export const MenuStack = () => {
           options={{title: title}}
           component={SubcategoryScreen}
         />
-        <Stack.Screen
-          options={{title: 'product overview'}}
-          name="productOverView"
-          component={ProductOverView}
-        />
+        <Stack.Group
+          screenOptions={{
+            headerShown: true,
+            header: ({options}) => {
+              return <AppHeaders title={options.title} toggleDisable={false} />;
+            },
+          }}>
+          <Stack.Screen
+            options={{title: 'product overview'}}
+            name="productOverView"
+            component={ProductOverView}
+          />
+        </Stack.Group>
         <Stack.Group
           screenOptions={{
             headerShown: true,
@@ -456,7 +487,6 @@ export const OrderStack = () => {
     <>
       <Stack.Navigator
         screenOptions={{
-          // cardStyle: {paddingBottom: 70},
           CardStyleInterpolators:
             CardStyleInterpolators.forScaleFromCenterAndroid,
           headerShown: false,
@@ -497,7 +527,6 @@ export const OrderStack = () => {
 export const ProfileStack = () => {
   const {title, altTitle} = useSelector(state => state.title);
   const {assesmentRoute} = useSelector(state => state.setting);
-  print(assesmentRoute, 'assesmentRoute----');
   return (
     <>
       <Stack.Navigator
@@ -507,12 +536,6 @@ export const ProfileStack = () => {
           CardStyleInterpolators:
             CardStyleInterpolators.forScaleFromCenterAndroid,
         }}>
-        {/* <Stack.Screen
-          name="assesments"
-          // options={{title: 'START YOUR MEALS'}}
-          component={Assesments}
-        /> */}
-
         <Stack.Group
           screenOptions={{
             headerShown: true,
@@ -617,28 +640,6 @@ export const ProfileStack = () => {
             options={{title: 'About Us'}}
             component={AboutUs}
           />
-          {/* <Stack.Screen
-            name="editFood"
-            options={{title: 'EDIT YOUR MEALS'}}
-            component={EditFood}
-          />
-          <Stack.Screen
-            name="summary"
-            options={{title: 'Summary'}}
-            component={Summary}
-          />
-          <Stack.Screen
-            name="subscriptionPlanHistory"
-            component={SubscriptionOverview}
-            options={{
-              title: 'Plan history',
-            }}
-          />
-          <Stack.Screen
-            name="SubscribedPlanDetail"
-            options={{title: 'best deal'}}
-            component={SubscribedPlanDetail}
-          /> */}
           <Stack.Screen
             name="notification"
             options={{title: 'Notification'}}
@@ -655,7 +656,7 @@ export const ProfileStack = () => {
             }}>
             <Stack.Screen
               name="EditProfile"
-              options={{title: 'EditProfile'}}
+              options={{title: 'Edit Profile'}}
               component={EditProfile}
             />
             <Stack.Screen
@@ -669,11 +670,6 @@ export const ProfileStack = () => {
           screenOptions={{
             headerShown: false,
           }}>
-          <Stack.Screen
-            name="TermsAndConditions"
-            options={{title: ''}}
-            component={TermsAndConditions}
-          />
           <Stack.Screen
             name="step7"
             options={{title: 'START YOUR MEALS'}}

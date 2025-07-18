@@ -79,13 +79,11 @@ export const CartSlice = createSlice({
       const itemPresent = state.cart.find(item => item.id == action.payload.id);
       itemPresent.quantity++;
       let subTotal = state.cart.reduce((sum, item) => sum + item.offer, 0);
-      console.log(subTotal, 'subtotal++');
     },
     dicrementQuantity: (state, action) => {
       const itemPresent = state.cart.find(item => item.id == action.payload.id);
       itemPresent.quantity--;
       let subTotal = state.cart.reduce((sum, item) => sum - item.offer, 0);
-      console.log(subTotal, 'subtotal--');
     },
     deleteWholeCart: (state, action) => {
       state.cart = [];

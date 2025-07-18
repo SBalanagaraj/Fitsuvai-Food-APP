@@ -12,6 +12,7 @@ import HtmlView from '../../components/HtmlElement/RenderHtml';
 import MainOverflowCard from '../../components/Card/MainOverFlowCard';
 import AutoHeightImg from '../../components/Card/AutoHeightImg';
 import moment from 'moment';
+import FastImage from 'react-native-fast-image';
 
 const BlogDetail = ({route}) => {
   const {Blog_Detail} = route.params;
@@ -24,7 +25,10 @@ const BlogDetail = ({route}) => {
       {/* img */}
       <View style={styles.img_view}>
         {Blog_Detail.blogImage && Blog_Detail.blogImage != '' && (
-          <Image source={{uri: Blog_Detail.blogImage}} style={styles.img} />
+          <FastImage
+            source={{priority: 'high', uri: Blog_Detail.blogImage}}
+            style={styles.img}
+          />
         )}
         {/* date */}
         {Blog_Detail.blogDate && (
@@ -80,9 +84,9 @@ const BlogDetail = ({route}) => {
               }}
             />
             <View style={styles.author_img_view}>
-              <Image
+              <FastImage
                 resizeMode="cover"
-                source={{uri: Blog_Detail.bloggerImage}}
+                source={{priority: 'high', uri: Blog_Detail.bloggerImage}}
                 style={{width: '100%', height: '100%'}}
               />
             </View>

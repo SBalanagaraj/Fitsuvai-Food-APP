@@ -35,22 +35,22 @@ const Step1 = ({handlePage}) => {
     .shape({
       age: yup
         .number()
-        .required('please enter your current age')
+        .required('Please enter your current age')
         .min(13, 'Age must grater than 13')
         .max(90, 'Age must less than 90')
-        .typeError('age must be a number'),
+        .typeError('Age must be a number'),
       weight: yup
         .number()
-        .required('please enter your weight')
+        .required('Please enter your weight')
         .min(30, 'Please enter a value greater than or equal to 30.')
         .max(360, 'Please enter a value less than or equal to 360.')
-        .typeError('weight must be a number'),
+        .typeError('Weight must be a number'),
       height: yup
         .number()
         .required('Please provide your height in foot')
         .min(121.92, 'Please enter a value greater than or equal to 121.92')
-        .max(182.88, 'Please enter a value less than or equal to 182.88')
-        .typeError('height must be a number'),
+        .max(250, 'Please enter a value less than or equal to 250')
+        .typeError('Height must be a number'),
       activity: yup.string().required('Select your activity'),
     })
     .required();
@@ -77,10 +77,8 @@ const Step1 = ({handlePage}) => {
 
   const handleNext = data => {
     if (isValid) {
-      console.log(data, 'dta');
       const bmi = calculateBMI(data.weight, data.height);
       if (bmi > 0) {
-        console.log('its work');
         dispatch(setSummeryContent({bmi: bmi}));
         dispatch(setSummeryContent(data));
         Keyboard.dismiss();
@@ -114,8 +112,9 @@ const Step1 = ({handlePage}) => {
     <View
       style={{
         width: '100%',
-        height: scrnHeight / 1.6,
+        height: scrnHeight / 1.8,
         paddingHorizontal: 20,
+        paddingBottom: 45,
         // borderWidth:1
       }}>
       <KeyboardAwareScrollView
@@ -137,7 +136,7 @@ const Step1 = ({handlePage}) => {
             <InputText
               autoFocus={true}
               row
-              placeholder={'Enter mobile age'}
+              placeholder={'Enter Your age'}
               value={value}
               leftIcon
               keyboardType={'numeric'}
@@ -203,7 +202,7 @@ const Step1 = ({handlePage}) => {
                 placeholder={'Select your Activity level'}
                 options={activity}
                 optionsHeight={200}
-                altStyle={{zIndex: 16}}
+                altStyle={{zIndex: 1000}}
                 drop={drop}
               />
             </>

@@ -11,6 +11,7 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-feature android:name="android.hardware.camera.front" android:required="false" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
@@ -22,6 +23,10 @@
       android:allowBackup="false"
       android:theme="@style/AppTheme"
      >
+     <!-- this configuration for Map View -->
+        <meta-data
+          android:name="com.google.android.geo.API_KEY"
+          android:value='AIzaSyANNOH9BFWujPDbF0vxK-1sm5nD-Qg_kY8' />
       <activity
         android:name=".MainActivity"
         android:label="@string/app_name"
@@ -31,11 +36,18 @@
         android:exported="true"
         android:screenOrientation="portrait"
         >
+        
         <intent-filter>
             <action android:name="android.intent.action.MAIN" />
             <!-- blob util package -->
                 <action android:name="android.intent.action.DOWNLOAD_COMPLETE"/>
             <category android:name="android.intent.category.LAUNCHER" />
+        </intent-filter>
+        <intent-filter android:autoVerify="true">
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+           <data android:scheme="https" android:host="www.fitsuvai.com"/>
         </intent-filter>
       </activity>
      <!--  Change the value to true to enable pop-up for in foreground on receiving remote notifications (for prevent duplicating while showing local notifications set this to false) -->

@@ -20,9 +20,9 @@ import {
   widthResponse,
   fontScalling,
   scrnWidth,
-  print,
 } from '../../utilities/helperFunction';
 import {BlogShimmer} from '../../utilities/appShimmer';
+import FastImage from 'react-native-fast-image';
 // import LoaderKit from 'react-native-loader-kit';
 
 const BlogOverview = ({navigation}) => {
@@ -188,8 +188,11 @@ const BlogOverview = ({navigation}) => {
                         {/* img */}
                         <View style={styles.img_view}>
                           {item.blogImage && item.blogImage != '' && (
-                            <Image
-                              source={{uri: item.blogImage}}
+                            <FastImage
+                              source={{
+                                priority: FastImage.priority.high,
+                                uri: item.blogImage,
+                              }}
                               resizeMode="cover"
                               style={[styles.img]}
                             />
@@ -237,9 +240,12 @@ const BlogOverview = ({navigation}) => {
                           <View style={styles.author_view}>
                             {item.bloggerImage && item.bloggerImage != '' && (
                               <View style={styles.author_img_view}>
-                                <Image
+                                <FastImage
                                   resizeMode="cover"
-                                  source={{uri: item.bloggerImage}}
+                                  source={{
+                                    priority: FastImage.priority.high,
+                                    uri: item.bloggerImage,
+                                  }}
                                   style={{width: '100%', height: '100%'}}
                                 />
                               </View>

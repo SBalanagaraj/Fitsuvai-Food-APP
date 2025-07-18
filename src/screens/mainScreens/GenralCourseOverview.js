@@ -20,6 +20,7 @@ import {useDispatch} from 'react-redux';
 import {setTitle} from '../../redux/TitleSlice';
 import AutoHeightImg from '../../components/Card/AutoHeightImg';
 import {OverviewShimmer} from '../../utilities/appShimmer';
+import FastImage from 'react-native-fast-image';
 
 const GenralCourseOverview = ({navigation}) => {
   const appColor = appColors();
@@ -186,10 +187,13 @@ const GenralCourseOverview = ({navigation}) => {
                         {/* img */}
                         {item.image && item.image != '' && (
                           <View style={styles.img_view}>
-                            <Image
+                            <FastImage
                               resizeMode="cover"
                               style={styles.img}
-                              source={{uri: item.image}}
+                              source={{
+                                priority: FastImage.priority.high,
+                                uri: item.image,
+                              }}
                             />
                           </View>
                         )}

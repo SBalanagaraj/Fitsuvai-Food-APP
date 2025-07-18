@@ -13,12 +13,6 @@ import {persistStore} from 'redux-persist';
 
 const persistor = persistStore(store);
 
-// PushNotification.configure({
-//   // (optional) Called when Token is generated (iOS and Android)
-//   onRegister: function (token) {
-//     console.log('TOKEN:', token);
-//   },
-// });
 
 AppRegistry.registerComponent(appName, () => () => (
   <Provider store={store}>

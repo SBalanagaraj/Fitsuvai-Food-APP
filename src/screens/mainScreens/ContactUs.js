@@ -1,6 +1,5 @@
-import {Pressable, StyleSheet, Text, View} from 'react-native';
+import {StyleSheet, Text, View, TouchableOpacity} from 'react-native';
 import React, {useEffect, useRef, useState} from 'react';
-// import MainOverflowCard from '../../components/Card/MainOverFlowCard';
 import {Icon} from '../../utilities/icon';
 import appColors from '../../utilities/appColors';
 import {appFont} from '../../utilities/appFont';
@@ -11,7 +10,6 @@ import {yupResolver} from '@hookform/resolvers/yup';
 import {InputText} from '../../components/InputField/InputText';
 import {
   fontScalling,
-  print,
   scrnHeight,
   scrnWidth,
   widthResponse,
@@ -24,6 +22,7 @@ import * as Animatable from 'react-native-animatable';
 import {url} from '../../utilities/appApi';
 import {useShowToast} from '../../components/Toast/ToastAlert';
 import {useSelector} from 'react-redux';
+import FastImage from 'react-native-fast-image';
 
 const ContactUs = () => {
   const appColor = appColors();
@@ -32,13 +31,11 @@ const ContactUs = () => {
   const isFocus = useIsFocused();
   const showToast = useShowToast();
   const {userSettings} = useSelector(state => state.setting);
-  const [checkbox, setCheckbox] = useState(false);
-
-  // TextInputFocus function
-  const scrollRef = useRef(null);
+  const [captchaImg, setCaptchaImg] = useState('');
 
   // reset the data:
   useEffect(() => {
+    generateCaptcha();
     if (!isFocus) {
       reset();
     }
@@ -48,21 +45,28 @@ const ContactUs = () => {
   const schema = yup
     .object()
     .shape({
-      fname: yup.string('must be string').required('Name is required'),
+      fname: yup.string('Must be string').required('Name is required'),
       email: yup
         .string()
         .email('Please Enter a valid Email')
         .required('Email is required'),
       number: yup
         .string()
-        .required('Mobil Number is required')
-        .min(10, 'invalid Mobile Number'),
-      subject: yup.string('must be string').required('subject is required'),
-      message: yup.string('must be string').required('type a message for us'),
+        .required('Mobile Number is required')
+        .min(10, 'Invalid Mobile Number'),
+      subject: yup.string('Must be string').required('Subject is required'),
+      message: yup.string('Must be string').required('Type a message for us'),
       checkbox: yup
         .boolean()
         .required()
         .oneOf([true], 'You must accept the terms and conditions'),
+      captcha: yup
+        .string()
+        .required('Captcha is required')
+        .test('empty-or-valid', 'Invalid Captcha', function (value) {
+          // Check if captcha is not the same as the number
+          return value == captchaImg;
+        }),
     })
     .required();
 
@@ -71,6 +75,7 @@ const ContactUs = () => {
     control,
     handleSubmit,
     reset,
+    setValue,
     formState: {errors, isValid},
   } = useForm({
     resolver: yupResolver(schema),
@@ -104,6 +109,7 @@ const ContactUs = () => {
         // print(resparse, 'resparse');
         if (resparse.status == 'Success') {
           reset();
+          generateCaptcha();
           showToast('success', resparse.status, resparse.message, 1500);
         }
       } else {
@@ -112,6 +118,11 @@ const ContactUs = () => {
     } catch (e) {
       console.log(e, 'error Contact us');
     }
+  };
+
+  const generateCaptcha = () => {
+    setCaptchaImg(Math.round(Math.random() * 1000000));
+    setValue('captcha', '');
   };
 
   return (
@@ -154,7 +165,7 @@ const ContactUs = () => {
         <View
           style={{
             width: '100%',
-            marginBottom: 15,
+            // marginBottom: 15,
             flexWrap: 'wrap',
             flexDirection: 'row',
             justifyContent: 'space-between',
@@ -200,16 +211,7 @@ const ContactUs = () => {
             )}
           {userSettings?.SITEINFO?.address &&
             userSettings?.SITEINFO?.address != '' && (
-              <View
-                style={[
-                  styles.flex,
-                  {
-                    width: '100%',
-                    marginBottom: 0,
-                    alignItems: 'flex-start',
-                    paddingTop: 5,
-                  },
-                ]}>
+              <View style={[styles.flex, {width: '100%', marginBottom: 0}]}>
                 <View style={styles.icon}>
                   <Icon
                     name={'location-pin'}
@@ -258,12 +260,12 @@ const ContactUs = () => {
                   value={value}
                   row
                   noelevation
-                  Title={'Name'}
+                  Title={'Your Name'}
                   onChangeText={onChange}
                   formError={errors.fname}
                   onFocus={event => {
                     if (textFocus.current) {
-                      textFocus.current.scrollToFocusedInput(event.target);
+                      // textFocus.current.scrollToFocusedInput(event.target);
                     }
                   }}
                 />
@@ -292,7 +294,7 @@ const ContactUs = () => {
                     formError={errors.email}
                     onFocus={event => {
                       if (textFocus.current) {
-                        textFocus.current.scrollToFocusedInput(event.target);
+                        // textFocus.current.scrollToFocusedInput(event.target);
                       }
                     }}
                   />
@@ -315,7 +317,7 @@ const ContactUs = () => {
                     formError={errors.number}
                     onFocus={event => {
                       if (textFocus.current) {
-                        textFocus.current.scrollToFocusedInput(event.target);
+                        // textFocus.current.scrollToFocusedInput(event.target);
                       }
                     }}
                   />
@@ -337,7 +339,7 @@ const ContactUs = () => {
                   formError={errors.subject}
                   onFocus={event => {
                     if (textFocus.current) {
-                      textFocus.current.scrollToFocusedInput(event.target);
+                      // textFocus.current.scrollToFocusedInput(event.target);
                     }
                   }}
                 />
@@ -349,7 +351,7 @@ const ContactUs = () => {
               control={control}
               render={({field: {onChange, value}}) => (
                 <InputText
-                  placeholder={'enter your message...'}
+                  placeholder={'Enter your message...'}
                   value={value}
                   row
                   textVertical
@@ -361,38 +363,90 @@ const ContactUs = () => {
                   formError={errors.message}
                   onFocus={event => {
                     if (textFocus.current) {
-                      textFocus.current.scrollToFocusedInput(event.target);
+                      // textFocus.current.scrollToFocusedInput(event.target);
                     }
                   }}
                 />
               )}
             />
             {/* checkbox */}
+
             <Controller
               name="checkbox"
               control={control}
               render={({field: {onChange, value}}) => (
                 <CheckBox
                   checkBox={value}
+                  altStyle={{marginRight: 'auto'}}
                   onPress={() => onChange(!value)}
-                  multiLabel
+                  // multiLabel
+                  terms
                   color
                 />
               )}
             />
             {errors.checkbox && (
-              <Text
-                style={{
-                  marginTop: 8,
-                  color: appColor.formError,
-                  fontSize: fontScalling(1.6),
-                  fontFamily: appFont.rR,
-                }}>
-                {errors.checkbox.message}
-              </Text>
+              <Text style={[styles.errors]}>{errors.checkbox.message}</Text>
+            )}
+            {/* captcha */}
+            <View
+              removeClippedSubviews
+              style={{
+                flex: 1,
+                flexDirection: 'row',
+                alignItems: 'center',
+                marginTop: 20,
+              }}>
+              <View>
+                <FastImage
+                  source={require('../../../assets/images/captcha.webp')}
+                  resizeMode="cover"
+                  style={[{...StyleSheet.absoluteFillObject}]}
+                />
+                <Text
+                  selectable={false}
+                  style={[styles.content, {padding: 5, color: appColor.white}]}>
+                  {captchaImg}
+                </Text>
+              </View>
+              <Controller
+                name="captcha"
+                control={control}
+                render={({field: {onChange, value}}) => (
+                  <InputText
+                    placeholder={'Captcha'}
+                    value={value}
+                    noelevation
+                    customStyle={{
+                      flex: 1,
+                      paddingBottom: 0,
+                      marginHorizontal: 5,
+                    }}
+                    contextMenuHidden={true}
+                    keyboardType={'numeric'}
+                    onChangeText={onChange}
+                    onFocus={event => {
+                      if (textFocus.current) {
+                        // textFocus.current.scrollToFocusedInput(event.target);
+                      }
+                    }}
+                  />
+                )}
+              />
+              <TouchableOpacity onPress={() => generateCaptcha()}>
+                <Icon
+                  ComponentName={'Ionicons'}
+                  name={'reload'}
+                  size={widthResponse ? 20 : 25}
+                  color={appColor.bgBlack}
+                />
+              </TouchableOpacity>
+            </View>
+            {errors.captcha && (
+              <Text style={[styles.errors]}>{errors.captcha.message}</Text>
             )}
             <PrimaryButton
-              Title={'Submit'}
+              Title={'Contact us'}
               parentStyle={{flex: 1}}
               altStyle={{marginVertical: 20}}
               onPress={handleSubmit(onPressSend)}
@@ -401,38 +455,41 @@ const ContactUs = () => {
         </View>
         {/* Map */}
         {/* //@@ */}
-        <View
-          style={{
-            paddingTop: widthResponse ? 10 : 20,
-            marginBottom: widthResponse ? 80 : 100,
-          }}>
-          <View
-            style={{
-              flex: 1,
-              elevation: 8,
-              shadowOpacity: 0.5,
-              shadowRadius: 5,
-              shadowOffset: {height: 1},
-            }}>
-            <WebView
-              showsVerticalScrollIndicator={false}
-              originWhitelist={['*']}
-              source={{
-                html: `
+        {userSettings?.SITEINFO?.map_iframe &&
+          userSettings?.SITEINFO?.map_iframe != '' && (
+            <View
+              style={{
+                paddingTop: widthResponse ? 10 : 20,
+                marginBottom: widthResponse ? 80 : 100,
+              }}>
+              <View
+                style={{
+                  flex: 1,
+                  elevation: 8,
+                  shadowOpacity: 0.5,
+                  shadowRadius: 5,
+                  shadowOffset: {height: 1},
+                }}>
+                <WebView
+                  showsVerticalScrollIndicator={false}
+                  originWhitelist={['*']}
+                  source={{
+                    html: `
                   <html>
                     <body>
                       <iframe src="${userSettings?.SITEINFO?.map_iframe}" 
                         width="${scrnWidth - 30}"
-                        height="${scrnHeight / 2}"
+                        height="${scrnWidth - 30}"
                         style="border: 0; border-radius: 20px;"
                         loading="lazy">
                       </iframe>
                     </body>
                   </html>`,
-              }}
-            />
-          </View>
-        </View>
+                  }}
+                />
+              </View>
+            </View>
+          )}
       </KeyboardAwareScrollView>
     </View>
   );
@@ -448,7 +505,7 @@ const useStyle = () => {
       alignItems: 'center',
       flexDirection: 'row',
       paddingRight: widthResponse ? 5 : 10, //@@
-      marginBottom: widthResponse ? 10 : 50, //@@
+      marginBottom: widthResponse ? 30 : 50, //@@
     },
     head: {
       color: appColor.bgBlack,
@@ -476,6 +533,12 @@ const useStyle = () => {
       color: appColor.bgBlack,
       fontFamily: appFont.rR,
       fontSize: fontScalling(1.7),
+    },
+    errors: {
+      marginTop: 8,
+      color: appColor.formError,
+      fontSize: fontScalling(1.45),
+      fontFamily: appFont.rR,
     },
     searchContainer: {
       flexDirection: 'row',

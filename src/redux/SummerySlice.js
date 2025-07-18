@@ -1,6 +1,7 @@
 import {createSlice} from '@reduxjs/toolkit';
 
 const initialState = {
+  planDays: '',
   triggerEdit: 1,
   assesMentIds: [
     {assessmentId: ''},
@@ -71,6 +72,7 @@ const initialState = {
     proteins: '',
     carbs: '',
     fats: '',
+    trainerStatus: '',
   },
   editPlanDetails: {
     vesselPrice: '',
@@ -196,6 +198,9 @@ const SummerySlice = createSlice({
     setTriggerEdit: (state, action) => {
       state.triggerEdit = action.payload;
     },
+    setPlanDays: (state, action) => {
+      state.planDays = action.payload;
+    },
   },
 });
 
@@ -214,6 +219,7 @@ export const {
   setOnlyCustomPlan,
   setTriggerEdit,
   setNutrients,
+  setPlanDays,
 } = SummerySlice.actions;
 
 export default SummerySlice.reducer;

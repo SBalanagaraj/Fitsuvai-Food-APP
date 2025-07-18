@@ -4,34 +4,40 @@ import {NavigationContainer} from '@react-navigation/native';
 // file import:
 import {ToastConfig, useShowToast} from './src/components/Toast/ToastAlert';
 import {AuthStack} from './src/navigations/Stack';
-import {BottomSheetModalProvider} from '@gorhom/bottom-sheet';
+import {
+  BottomSheetModalProvider,
+  BottomSheetFlatList,
+} from '@gorhom/bottom-sheet';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {useNetInfo} from '@react-native-community/netinfo';
 import NetworkUnavailable from './src/components/NetworkUnavailable/NetworkUnavailable';
-import {
-  checkNotifications,
-  requestNotifications,
-} from 'react-native-permissions';
-import {AppState, Platform, Text, View} from 'react-native';
-import messaging from '@react-native-firebase/messaging';
+import {AppState, Text, View} from 'react-native';
 import {useDispatch, useSelector} from 'react-redux';
 import {listProductApi, setFavModal, addToFavApi} from './src/redux/favSlice';
-import {BottomSheetFlatList} from '@gorhom/bottom-sheet';
 import ModalBottomSheet from './src/components/BottomSheet/ModalBottomSheet';
 import FavCard from './src/components/Card/FavCard';
 import PrimaryButton from './src/components/Buttons/PrimaryButton';
 import {appFont} from './src/utilities/appFont';
 import appColors from './src/utilities/appColors';
-import {fontScalling} from './src/utilities/helperFunction';
-import {setFcmToken, userSettingApi} from './src/redux/SettingSlice';
+import {
+  fontScalling,
+  checkNotificationPermission,
+  print,
+} from './src/utilities/helperFunction';
+import {ContentApi, userSettingApi} from './src/redux/SettingSlice';
+import SplashScreen from 'react-native-splash-screen';
 
 const App = () => {
   const {isConnected} = useNetInfo();
   const dispatch = useDispatch();
-  const {favModal, collections, prodId} = useSelector(state => state.fav);
-  const {userSettings, vegToggle} = useSelector(state => state.setting);
   const appColor = appColors();
   const showToast = useShowToast();
+
+  const {favModal, collections, prodId} = useSelector(state => state.fav);
+  const {userSettings, vegToggle} = useSelector(state => state.setting);
+  const {profileData} = useSelector(state => state.auth);
+
+  const badGateWay = userSettings && userSettings == 404;
 
   // when the app state is background hide the modal
   useEffect(() => {
@@ -45,94 +51,69 @@ const App = () => {
     };
   }, []);
 
+  // push notification permissions and token generation
   useEffect(() => {
-    const checkNotificationPermission = async () => {
-      // to get proper permission for android
-      if (Platform.OS == 'android') {
-        const result = await checkNotifications();
-        if (
-          result.status == 'granted' ||
-          result.status == 'blocked' ||
-          result.status == 'denied'
-        ) {
-          const requestNotification = await requestNotifications();
-          if (
-            requestNotification.status == 'granted' ||
-            requestNotification.status == 'denied' ||
-            requestNotification.status == 'blocked'
-          ) {
-            checkPermission();
-          } else {
-            checkPermission();
-          }
-        } else {
-          checkPermission();
-        }
-      }
-      // step1
-      function checkPermission() {
-        messaging()
-          .hasPermission()
-          .then(enable => {
-            if (enable) {
-              getToken();
-            } else {
-              requestNotification();
-            }
-          })
-          .catch(e => {
-            console.log('error in checkPermission', e);
-          });
-      }
-      // step2
-      const requestNotification = async () => {
-        messaging()
-          .requestPermission()
-          .then(() => {
-            getToken();
-          })
-          .catch(e => {
-            console.log('error in request notification', e);
-          });
-      };
-      // step3
-      const getToken = async () => {
-        messaging()
-          .getToken()
-          .then(token => {
-            dispatch(setFcmToken(token));
-            dispatch(userSettingApi());
-            // console.log('fcm Token', token);
-          })
-          .catch(e => {
-            console.log('error in token get', e);
-          });
-      };
-    };
-    checkNotificationPermission();
+    checkNotificationPermission(dispatch);
   }, []);
 
   useEffect(() => {
     if (userSettings?.userInfo?.user_id) {
-      // dispatch(favDataApi());
+      console.log(userSettings?.userInfo?.user_id, 'user_id');
       dispatch(listProductApi());
     }
   }, [userSettings]);
 
   useEffect(() => {
     if (vegToggle) {
-      showToast('success', '', 'You are now vegitarian mode', 2000);
+      showToast('success', '', 'You are now in vegetarian mode', 2000);
     } else if (!vegToggle) {
-      // showToast('success', '', 'You are general mode', 2000);
     }
   }, [vegToggle]);
+
+  // call userSetting Api when app will invoke
+  useEffect(() => {
+    (() => {
+      dispatch(userSettingApi());
+      dispatch(ContentApi());
+    })();
+  }, [profileData]);
+
+  useEffect(() => {
+    if (badGateWay) {
+      SplashScreen.hide();
+    }
+  }, [badGateWay]);
+
+  // print(userSettings, 'userSettings');
 
   return (
     <>
       <NavigationContainer independent={true}>
         <GestureHandlerRootView>
           <BottomSheetModalProvider>
-            {isConnected ? <AuthStack /> : <NetworkUnavailable />}
+            {badGateWay ? (
+              <>
+                <View
+                  style={{
+                    flex: 1,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                  <Text
+                    style={{
+                      fontFamily: appFont.bB,
+                      fontSize: fontScalling(2),
+                      color: appColor.bgBlack,
+                    }}>
+                    Bad GateWay
+                  </Text>
+                </View>
+              </>
+            ) : isConnected ? (
+              <AuthStack />
+            ) : (
+              <NetworkUnavailable />
+            )}
             {/* collectionsModal bottomSheet */}
             <ModalBottomSheet
               snapPoints={['40%', '45%']}
